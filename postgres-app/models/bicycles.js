@@ -12,7 +12,9 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Bicycles.belongsTo(models.Station)
-      Bicycles.hasMany(models.Rental)
+      Bicycles.hasMany(models.Rental, {
+          foreignKey: 'BicycleId'
+         })
     }
   }
   Bicycles.init({
@@ -46,10 +48,16 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: { msg: "please input price" }
       }
     },
-    StationId: DataTypes.INTEGER
-  }, {
-    sequelize,
-    modelName: 'Bicycles',
-  });
+    StationId: DataTypes.INTEGER,
+    status: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true 
+    },
+  },
+    {
+      sequelize,
+      modelName: 'Bicycles',
+    });
   return Bicycles;
 };
