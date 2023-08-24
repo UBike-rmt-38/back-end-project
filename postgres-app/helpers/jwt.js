@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const JWT_KEY = process.env.JWT_KEY
+const JWT_KEY = process.env.JWT_SECRET
 
 function signToken(user) {
     const { id, email, username } = user

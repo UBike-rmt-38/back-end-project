@@ -1,6 +1,7 @@
 "use strict";
 const bcrypt = require('bcrypt')
-const { User, Bicycles, Rental, Station, sequelize } = require('../models/index')
+const { User, Bicycles, Rental, Station, sequelize } = require('../models/index');
+const { signToken } = require('../helpers/jwt');
 
 const typeDefs = `#graphql
 type Stations {
@@ -82,6 +83,11 @@ type Mutation {
         travelledDistance: Int
         totalPrice: Int 
         StationId: Int
+    ): String
+
+    login(
+        username: String!
+        password: String!
     ): String
 }
 `
@@ -173,6 +179,19 @@ const resolvers = {
                 return 'Rent done'
             } catch (err) {
                 t.rollback()
+                console.log(err);
+            }
+        },
+        login: async (_,args) =>{
+            try{
+                const {username, password}= args
+                const user = await User.findOne({where: {username}})
+               if (!user) return 'invalid username\password'
+               const verifyPassword = bcrypt.compareSync(password, user.password)
+               if(!verifyPassword) return 'invalid username\password'
+               const access_token = signToken(user)
+               return access_token
+            }catch(err){
                 console.log(err);
             }
         }
