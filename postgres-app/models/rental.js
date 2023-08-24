@@ -11,23 +11,27 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Rental.belongsTo(models.User)
-      Rental.belongsTo(models.Bicycle)
+      // Rental.belongsTo(models.User, {
+      //   foreignKey: 'UserId'
+      // })
+      // Rental.belongsTo(models.Bicycle, {
+      //   foreignKey: 'BicycleId'
+      // })
     }
   }
   Rental.init({
     status: {
-      type: DataTypes.STRING,
+      type: DataTypes.BOOLEAN,
       defaultValue: true
     },
     travelledDistance: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       validate: {
         notEmpty: { msg: "please input distance" }
       }
     },
     totalPrice: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       validate: {
         notEmpty: { msg: "please input total price" }
       }
@@ -40,3 +44,4 @@ module.exports = (sequelize, DataTypes) => {
   });
   return Rental;
 };
+

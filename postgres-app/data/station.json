@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Senayan City",
+        "address": "Jl. Asia Afrika, RT.1/RW.3, Gelora, Kecamatan Tanah Abang, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10270",
+        "latitude": "-6.226630",
+        "longtitude": "106.798144"
+    },
+    {
+        "name": "Palmerah",
+        "address": "Jl. Palmerah Timur No.10, RT.3/RW.1, Gelora, Kecamatan Tanah Abang, Kota Jakarta Pusat, Daerah Khusus Ibukota Jakarta 10270",
+        "latitude": "-6.207515",
+        "longtitude": "106.797226"
+    },
+    {
+        "name": "Binus Kampus Anggrek",
+        "address": "Palmerah, West Jakarta City, Jakarta",
+        "latitude": "-6.201800",
+        "longtitude": "106.782747"
+    }
+]
