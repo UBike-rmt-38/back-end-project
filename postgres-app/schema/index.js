@@ -2,6 +2,7 @@
 const bcrypt = require('bcrypt')
 const { User, Bicycles, Rental, Station, sequelize } = require('../models/index');
 const { signToken } = require('../helpers/jwt');
+const midtransClient = require('midtrans-client');
 
 const typeDefs = `#graphql
 type Stations {
@@ -39,6 +40,12 @@ type Rentals {
     totalPrice: Int
     UserId: Int
     BicycleId: Int 
+    transaction: String
+}
+
+type MidtranToken {
+    token: String
+    redirect_url: String
 }
 
 type Query {
@@ -74,14 +81,15 @@ type Mutation {
     ): String
 
     createRental(
-        UserId: Int
-        BicycleId: Int 
-    ): String
-
-    updateRental(
-        rentalId: Int
         travelledDistance: Int
         totalPrice: Int 
+        UserId: Int
+        BicycleId: Int
+        transaction: String
+    ): String
+
+    doneRental(
+        rentalId: Int
         StationId: Int
     ): String
 
@@ -89,6 +97,11 @@ type Mutation {
         username: String!
         password: String!
     ): String
+
+    generateMidtrans(
+        userId: Int
+        totalPrice: Int
+    ): MidtranToken
 }
 `
 
@@ -156,8 +169,8 @@ const resolvers = {
         createRental: async (_, args) => {
             const t = await sequelize.transaction()
             try {
-                const { UserId, BicycleId } = args
-                await Rental.create({ travelledDistance: 0, totalPrice: 0, UserId, BicycleId }, { transaction: t })
+                const { travelledDistance, totalPrice, UserId, BicycleId, transaction } = args
+                await Rental.create({ travelledDistance, totalPrice, UserId, BicycleId, transaction }, { transaction: t })
                 await Bicycles.update({ status: false }, { where: { id: BicycleId } }, { transaction: t })
                 await t.commit()
 
@@ -167,11 +180,11 @@ const resolvers = {
                 console.log(err);
             }
         },
-        updateRental: async (_, args) => {
+        doneRental: async (_, args) => {
             const t = await sequelize.transaction()
             try {
-                const { rentalId, travelledDistance, totalPrice, StationId } = args
-                await Rental.update({ status: false, travelledDistance, totalPrice }, { where: { id: rentalId } }, { transaction: t })
+                const { rentalId, StationId } = args
+                await Rental.update({ status: true }, { where: { id: rentalId } }, { transaction: t })
                 const rental = await Rental.findByPk(rentalId)
                 await Bicycles.update({ status: true, StationId }, { where: { id: rental.BicycleId } }, { transaction: t })
                 await t.commit()
@@ -192,6 +205,35 @@ const resolvers = {
                const access_token = signToken(user)
                return access_token
             }catch(err){
+                console.log(err);
+            }
+        },
+        generateMidtrans: async (_,args) =>{
+            try{
+                const {userId, totalPrice} = args
+                const user = await User.findByPk(userId)
+                let snap = new midtransClient.Snap({
+                    isProduction: false,
+                    serverKey: process.env.MIDTRANS_API_KEY
+                });
+    
+                let parameter = {
+                    transaction_details: {
+                        order_id: "UBIKE" + Math.floor(1000000 + Math.random() * 9000000),
+                        gross_amount: totalPrice
+                    },
+                    credit_card: {
+                        secure: true
+                    },
+                    customer_details: {
+                        username: user.username,
+                        email: user.email
+                    }
+                };
+                const midtransToken = await snap.createTransaction(parameter)
+                console.log(midtransToken);
+                return midtransToken
+            } catch(err){
                 console.log(err);
             }
         }

@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
   Rental.init({
     status: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true
+      defaultValue: false
     },
     travelledDistance: {
       type: DataTypes.INTEGER,
@@ -37,7 +37,11 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     UserId: DataTypes.INTEGER,
-    BicycleId: DataTypes.INTEGER
+    BicycleId: DataTypes.INTEGER,
+    transaction: {
+      type: DataTypes.STRING, 
+      allowNull: true,       
+    }
   }, {
     sequelize,
     modelName: 'Rental',
