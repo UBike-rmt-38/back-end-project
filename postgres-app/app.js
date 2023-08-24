@@ -11,3 +11,16 @@ const server = new ApolloServer({
 startStandaloneServer(server, {
     listen: { port: process.env.PORT || 4000 }
 }).then(({ url }) => console.log(`🚀 Server ready at ${url}`))
+
+async function createApolloServer(options) {
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    introspection: true,
+  });
+
+  const { url, stop } = await server?.listen(options); // <==== bug
+  return { server: { stop }, url };
+}
+
+module.exports = { createApolloServer }
