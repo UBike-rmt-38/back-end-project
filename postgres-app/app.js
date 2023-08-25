@@ -1,6 +1,7 @@
 const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
 const [typeDefs, resolvers] = require('./schema/index')
+const options = { port: 4000 }
 
 async function createApolloServer(options) {
   try {
@@ -16,5 +17,7 @@ async function createApolloServer(options) {
     throw error;
   }
 }
+
+createApolloServer(options)
 
 module.exports = { createApolloServer, startStandaloneServer }

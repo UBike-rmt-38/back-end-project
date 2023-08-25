@@ -1,0 +1,23 @@
+[
+  {
+    "status": false,
+    "travelledDistance": 10000,
+    "totalPrice": 100000,
+    "UserId": 1,
+    "BicycleId": 1
+  },
+  {
+    "status": true,
+    "travelledDistance": 10000,
+    "totalPrice": 100000,
+    "UserId": 2,
+    "BicycleId": 1
+  },
+  {
+    "status": false,
+    "travelledDistance": 10000,
+    "totalPrice": 100000,
+    "UserId": 2,
+    "BicycleId": 3
+  }
+]
