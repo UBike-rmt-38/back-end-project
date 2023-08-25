@@ -7,11 +7,12 @@ module.exports = async ({ req }) => {
     if (authorization) {
       const payload = verifyToken(authorization)
       const user = await User.findByPk(payload.id)
+      console.log(user, 'dari auth');
       if(!user) {
         const error = { message: 'Authorization token invalid' }
-        return { error }
+        return { error} 
       }
-      return user
+      return{ user}
     } else {
         const error = { message: 'Authorization token invalid' }
         return { error }

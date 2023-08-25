@@ -1,5 +1,6 @@
 "use strict";
 const bcrypt = require('bcrypt')
+const { AuthenticationError } = require('apollo-server');
 const { User, Bicycles, Rental, Station, sequelize } = require('../models/index');
 const { signToken } = require('../helpers/jwt');
 const midtransClient = require('midtrans-client');
@@ -75,9 +76,9 @@ type Mutation {
     ): String
 
     createUser(
-        username: String
-        email: String
-        password: String 
+        username: String!
+        email: String!
+        password: String! 
     ): String
 
     createRental(
@@ -98,40 +99,48 @@ type Mutation {
         password: String!
     ): String
 
-    generateMidtrans(
-        userId: Int
-        totalPrice: Int
+    topUpBalance(
+        amount: Int
     ): MidtranToken
 }
 `
 
 const resolvers = {
     Query: {
-        getStations: async () => {
-            const data = await Station.findAll()
+        getStations: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
+            const data = await Station.findAll({ include: { model: Bicycles } })
             return data
         },
-        getBicycles: async () => {
+        getBicycles: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
             const data = await Bicycles.findAll()
             return data
         },
-        getUsers: async () => {
+        getUsers: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
             const data = await User.findAll()
             return data
         },
-        getRentals: async () => {
+        getRentals: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
             const data = await Rental.findAll()
             return data
         },
-        getStationsById: async (_, args) => {
+        getStationsById: async (_, args, context) => {
             try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
                 const { stationId } = args
                 const data = await Station.findByPk(stationId, {
                     include: {
                         model: Bicycles
                     }
                 })
-                console.log(data);
                 return data
             } catch (err) {
                 console.log(err);
@@ -195,28 +204,29 @@ const resolvers = {
                 console.log(err);
             }
         },
-        login: async (_,args) =>{
-            try{
-                const {username, password}= args
-                const user = await User.findOne({where: {username}})
-               if (!user) return 'invalid username\password'
-               const verifyPassword = bcrypt.compareSync(password, user.password)
-               if(!verifyPassword) return 'invalid username\password'
-               const access_token = signToken(user)
-               return access_token
-            }catch(err){
+        login: async (_, args) => {
+            try {
+                const { username, password } = args
+                const user = await User.findOne({ where: { username } })
+                if (!user) return 'invalid username\password'
+                const verifyPassword = bcrypt.compareSync(password, user.password)
+                if (!verifyPassword) return 'invalid username\password'
+                const access_token = signToken(user)
+                return access_token
+            } catch (err) {
                 console.log(err);
             }
         },
-        generateMidtrans: async (_,args) =>{
-            try{
-                const {userId, totalPrice} = args
-                const user = await User.findByPk(userId)
+        topUpBalance: async (_, args, context) => {
+            try {
+                const { amount } = args
+                const { user, error } = context
+
                 let snap = new midtransClient.Snap({
                     isProduction: false,
                     serverKey: process.env.MIDTRANS_API_KEY
                 });
-    
+
                 let parameter = {
                     transaction_details: {
                         order_id: "UBIKE" + Math.floor(1000000 + Math.random() * 9000000),
@@ -233,7 +243,7 @@ const resolvers = {
                 const midtransToken = await snap.createTransaction(parameter)
                 console.log(midtransToken);
                 return midtransToken
-            } catch(err){
+            } catch (err) {
                 console.log(err);
             }
         }
