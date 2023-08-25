@@ -39,7 +39,8 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notEmpty: { msg: "please input password" }
       }
-    }
+    },
+    balance: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'User',
