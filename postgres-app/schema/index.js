@@ -72,6 +72,16 @@ type Mutation {
         longtitude: String!
     ): String
     
+    editStation(
+        stationId: Int!
+        name: String!
+        address: String!
+        latitude: String!
+        longtitude: String!
+    ): String
+
+    deleteStation(stationId: Int!): String
+
     addBicycle(
         name: String!
         feature: String!
@@ -180,6 +190,30 @@ const resolvers = {
                 throw err
             }
         },
+        editStation: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                const { name, address, latitude, longtitude, stationId } = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Station.update({name, address, latitude, longtitude}, {where: {id: stationId}})
+                return `station with id ${stationId} has been updated`
+            }catch(err){
+                console.log(err);
+                throw err
+            }
+        },
+        deleteStation: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                const {stationId} = args
+                await Station.destroy({where: {id: stationId}})
+                return `station with id ${stationId} has been deleted`
+            }catch(err){
+                console.log(err);
+                throw err
+            }
+        },
         addBicycle: async (_, args, context) => {
             try {
                 const { user, error } = await context
@@ -197,21 +231,21 @@ const resolvers = {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
                 const { name, feature, imageURL, description, price, StationId, bicycleId } = args
-                await Bicycles.update({name, feature, imageURL, description, price, StationId}, {where: {id: bicycleId}})
-                return `Bicycle with id ${bicycleId} updated`
+                await Bicycles.update({ name, feature, imageURL, description, price, StationId }, { where: { id: bicycleId } })
+                return `Bicycle with id ${bicycleId} has been updated`
             } catch (err) {
                 console.log(err);
                 throw err
             }
         },
-        deleteBicycle: async (_,args,context) => {
-            try{
+        deleteBicycle: async (_, args, context) => {
+            try {
                 const { user, error } = await context
-                const {bicycleId} = args
+                const { bicycleId } = args
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                await Bicycles.destroy({where: {id: bicycleId}})
+                await Bicycles.destroy({ where: { id: bicycleId } })
                 return `bicycle with id ${bicycleId} has been successfully deleted.`
-            }catch(err){
+            } catch (err) {
                 console.log(err);
                 throw err
             }
