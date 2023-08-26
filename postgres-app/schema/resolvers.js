@@ -4,151 +4,15 @@ const { AuthenticationError } = require('apollo-server');
 const { User, Bicycles, Rental, Station, sequelize, Transaction } = require('../models/index');
 const { signToken } = require('../helpers/jwt');
 const generateMidtransToken = require('../helpers/generateMidtransToken');
-
-const typeDefs = `#graphql
-type Stations {
-    id: Int 
-    name: String
-    address: String
-    latitude: String
-    longtitude: String
-    Bicycles: [Bicycles]
-    createdAt: String
-    upatedAt: String
-}
-
-type Bicycles {
-    id: Int
-    name: String
-    feature: String
-    imageURL: String
-    description: String
-    price: Int
-    StationId: Int
-    status: Boolean
-    createdAt: String
-    upatedAt: String
-}
-
-type Users {
-    id: Int
-    username: String
-    role: String
-    email: String
-    password: String 
-    balance: Int
-}
-
-type Rentals {
-    id: Int
-    status: Boolean
-    travelledDistance: Int
-    totalPrice: Int
-    UserId: Int
-    BicycleId: Int 
-    transaction: String
-    createdAt: String
-    upatedAt: String
-}
-
-type Transactions {
-    id: Int
-    action: String
-    amount: Int
-    UserId: Int
-    User: Users
-}
-
-type MidtranToken {
-    token: String
-    redirect_url: String
-}
-
-type Query {
-    getStations: [Stations]
-    getBicycles: [Bicycles]
-    getUsers: [Users]
-    getRentals: [Rentals]
-    getStationsById(stationId: Int): Stations
-    getTransactions: [Transactions]
-    userHistoryTransaction(UserId: Int): [Transactions]
-}
-
-type Mutation {
-    addStation(
-        name: String!
-        address: String!
-        latitude: String!
-        longtitude: String!
-    ): String
-    
-    editStation(
-        stationId: Int!
-        name: String!
-        address: String!
-        latitude: String!
-        longtitude: String!
-    ): String
-
-    deleteStation(stationId: Int!): String
-
-    addBicycle(
-        name: String!
-        feature: String!
-        imageURL: String!
-        description: String!
-        price: Int!
-       StationId: Int!
-    ): String
-
-    editBicycle(
-        bicycleId: Int!
-        name: String!
-        feature: String!
-        imageURL: String!
-        description: String!
-        price: Int!
-       StationId: Int!
-    ): String
-
-    deleteBicycle(bicycleId: Int!): String
-
-    createUser(
-        username: String!
-        email: String!
-        password: String! 
-        role: String
-    ): String
-
-    createRental(
-        BicycleId: Int!
-    ): String
-
-    doneRental(
-        travelledDistance: Int!
-        totalPrice: Int!
-        rentalId: Int!
-        StationId: Int!
-        transaction: String!
-    ): String
-
-    login(
-        username: String!
-        password: String!
-    ): String
-
-    generateMidtranToken(
-        amount: Int
-    ): MidtranToken
-
-    topUpBalance(amount: Int!): String
-}
-`
+const QRCode = require('qrcode');
+const jwt = require('jsonwebtoken');
+const JWT_KEY = process.env.JWT_SECRET
 
 const resolvers = {
     Query: {
         getStations: async (_, __, context) => {
             const { user, error } = await context
+            console.log(context, 'cek context');
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await Station.findAll({ include: { model: Bicycles } })
             return data
@@ -164,6 +28,18 @@ const resolvers = {
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await User.findAll()
             return data
+        },
+        getUsersDetails: async (_, __, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const data = await User.findByPk(user.id, { include: [{ model: Transaction }, { model: Rental }] })
+                console.log(data.Transactions);
+                return data
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
         },
         getRentals: async (_, __, context) => {
             const { user, error } = await context
@@ -192,30 +68,72 @@ const resolvers = {
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await Transaction.findAll({
                 include: [
-                  {
-                    model: User,
-                    attributes: {
-                      exclude: ['password']
+                    {
+                        model: User,
+                        attributes: {
+                            exclude: ['password']
+                        },
                     },
-                  },
                 ],
-              })
+            })
             return data
         },
-        userHistoryTransaction: async (_,args,context) => {
+        userHistoryTransaction: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const { UserId } = args
+                const data = await Transaction.findAll({
+                    where: { UserId }, include: [
+                        {
+                            model: User,
+                            attributes: {
+                                exclude: ['password']
+                            },
+                        },
+                    ],
+                });
+                return data
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        getStationQrCode: async (_, __, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const data = await Station.findAll()
+                const stationQrcode = await Promise.all(data.map(async e => {
+                    const token = jwt.sign({id: e.id}, JWT_KEY)
+                    try {
+                        const qrCodeString = await QRCode.toDataURL(token)
+                        return { qrCode: qrCodeString, name: e.name }
+                    } catch (err) {
+                        throw err;
+                    }
+                }))
+                return stationQrcode
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        getBicycleQrCode: async (_,__,context) => {
             try{
                 const { user, error } = await context
                 if (!user) { throw new AuthenticationError(error.message); }
-                const {UserId} = args
-                const data = await Transaction.findAll({where: {UserId}, include: [
-                    {
-                      model: User,
-                      attributes: {
-                        exclude: ['password']
-                      },
-                    },
-                  ],});
-                  return data
+                const data = await Bicycles.findAll()
+               const bicycleQrcode = await Promise.all(data.map(async e => {
+                const token = jwt.sign({id: e.id}, JWT_KEY)
+                try {
+                    const qrCodeString = await QRCode.toDataURL(token)
+                    return {qrCode: qrCodeString, name: e.name}
+                }catch(err){
+                    throw err
+                }
+               }))
+               return bicycleQrcode
             }catch(err){
                 console.log(err);
                 throw err
@@ -227,8 +145,8 @@ const resolvers = {
             try {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                const { name, address, latitude, longtitude } = args
-                await Station.create({ name, address, latitude, longtitude })
+                const { name, address, latitude, longitude } = args
+                await Station.create({ name, address, latitude, longitude })
                 return 'Station created'
             } catch (err) {
                 throw err
@@ -237,9 +155,9 @@ const resolvers = {
         editStation: async (_, args, context) => {
             try {
                 const { user, error } = await context
-                const { name, address, latitude, longtitude, stationId } = args
+                const { name, address, latitude, longitude, stationId } = args
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                await Station.update({ name, address, latitude, longtitude }, { where: { id: stationId } })
+                await Station.update({ name, address, latitude, longitude }, { where: { id: stationId } })
                 return `station with id ${stationId} has been updated`
             } catch (err) {
                 console.log(err);
@@ -402,4 +320,4 @@ const resolvers = {
     }
 }
 
-module.exports = [typeDefs, resolvers]
+module.exports = resolvers
