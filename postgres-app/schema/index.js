@@ -1,9 +1,9 @@
 "use strict";
 const bcrypt = require('bcrypt')
 const { AuthenticationError } = require('apollo-server');
-const { User, Bicycles, Rental, Station, sequelize } = require('../models/index');
+const { User, Bicycles, Rental, Station, sequelize, Transaction } = require('../models/index');
 const { signToken } = require('../helpers/jwt');
-const midtransClient = require('midtrans-client');
+const generateMidtransToken = require('../helpers/generateMidtransToken');
 
 const typeDefs = `#graphql
 type Stations {
@@ -13,6 +13,8 @@ type Stations {
     latitude: String
     longtitude: String
     Bicycles: [Bicycles]
+    createdAt: String
+    upatedAt: String
 }
 
 type Bicycles {
@@ -24,6 +26,8 @@ type Bicycles {
     price: Int
     StationId: Int
     status: Boolean
+    createdAt: String
+    upatedAt: String
 }
 
 type Users {
@@ -42,6 +46,8 @@ type Rentals {
     UserId: Int
     BicycleId: Int 
     transaction: String
+    createdAt: String
+    upatedAt: String
 }
 
 type MidtranToken {
@@ -59,39 +65,38 @@ type Query {
 
 type Mutation {
     addStation(
-        name: String
-        address: String
-        latitude: String
-        longtitude: String
+        name: String!
+        address: String!
+        latitude: String!
+        longtitude: String!
     ): String
     
     addBicycle(
-        name: String
-        feature: String
-        imageURL: String
-        description: String
-        price: Int
-       StationId: Int
-       status: Boolean
+        name: String!
+        feature: String!
+        imageURL: String!
+        description: String!
+        price: Int!
+       StationId: Int!
     ): String
 
     createUser(
         username: String!
         email: String!
         password: String! 
+        role: String
     ): String
 
     createRental(
-        travelledDistance: Int
-        totalPrice: Int 
-        UserId: Int
-        BicycleId: Int
-        transaction: String
+        BicycleId: Int!
     ): String
 
     doneRental(
-        rentalId: Int
-        StationId: Int
+        travelledDistance: Int!
+        totalPrice: Int!
+        rentalId: Int!
+        StationId: Int!
+        transaction: String!
     ): String
 
     login(
@@ -99,9 +104,11 @@ type Mutation {
         password: String!
     ): String
 
-    topUpBalance(
+    generateMidtranToken(
         amount: Int
     ): MidtranToken
+
+    topUpBalance(amount: Int!): String
 }
 `
 
@@ -144,42 +151,55 @@ const resolvers = {
                 return data
             } catch (err) {
                 console.log(err);
+                throw err
             }
         }
     },
     Mutation: {
-        addStation: async (_, args) => {
+        addStation: async (_, args, context) => {
             try {
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
                 const { name, address, latitude, longtitude } = args
                 await Station.create({ name, address, latitude, longtitude })
                 return 'Station created'
             } catch (err) {
-                console.log(err);
+                throw err
             }
         },
-        addBicycle: async (_, args) => {
+        addBicycle: async (_, args, context) => {
             try {
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
                 const { name, feature, imageURL, description, price, StationId } = args
                 await Bicycles.create({ name, feature, imageURL, description, price, StationId })
                 return 'Bicycle created'
             } catch (err) {
                 console.log(err);
+                throw err
             }
         },
         createUser: async (_, args) => {
             try {
-                const { username, email, password } = args
-                await User.create({ username, role: 'User', email, password })
-                return 'User created'
+                const { username, email, password, role } = args
+                if (!role) {
+                    await User.create({ username, role: 'User', email, password })
+                    return 'User created'
+                }
+                await User.create({ username, role, email, password })
+                return 'Admin created'
             } catch (err) {
                 console.log(err);
+                throw err
             }
         },
-        createRental: async (_, args) => {
+        createRental: async (_, args, context) => {
             const t = await sequelize.transaction()
             try {
-                const { travelledDistance, totalPrice, UserId, BicycleId, transaction } = args
-                await Rental.create({ travelledDistance, totalPrice, UserId, BicycleId, transaction }, { transaction: t })
+                const { user, error } = await context
+                const { BicycleId } = args
+                if (!user) { throw new AuthenticationError(error.message); }
+                await Rental.create({ UserId: user.id, BicycleId }, { transaction: t })
                 await Bicycles.update({ status: false }, { where: { id: BicycleId } }, { transaction: t })
                 await t.commit()
 
@@ -187,21 +207,35 @@ const resolvers = {
             } catch (err) {
                 t.rollback()
                 console.log(err);
+                throw err
             }
         },
-        doneRental: async (_, args) => {
+        doneRental: async (_, args, context) => {
             const t = await sequelize.transaction()
             try {
-                const { rentalId, StationId } = args
-                await Rental.update({ status: true }, { where: { id: rentalId } }, { transaction: t })
+                const { rentalId, StationId, travelledDistance, totalPrice, transaction } = args
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+
                 const rental = await Rental.findByPk(rentalId)
+                if (transaction === "Cash") {
+                    await Rental.update({ status: true, travelledDistance, totalPrice, transaction }, { where: { id: rentalId } }, { transaction: t })
+                    await Bicycles.update({ status: true, StationId }, { where: { id: rental.BicycleId } }, { transaction: t })
+                    await t.commit()
+                    return 'Rent done'
+                }
+                const newBalance = user.balance - totalPrice
+                await Rental.update({ status: true, travelledDistance, totalPrice, transaction }, { where: { id: rentalId } }, { transaction: t })
                 await Bicycles.update({ status: true, StationId }, { where: { id: rental.BicycleId } }, { transaction: t })
+                await Transaction.create({action: 'Payment', amount: totalPrice, UserId: user.id}, { transaction: t })
+                await User.update({balance: newBalance}, {where: {id: user.id}}, { transaction: t })
                 await t.commit()
 
                 return 'Rent done'
             } catch (err) {
                 t.rollback()
                 console.log(err);
+                throw err
             }
         },
         login: async (_, args) => {
@@ -215,36 +249,39 @@ const resolvers = {
                 return access_token
             } catch (err) {
                 console.log(err);
+                throw err
             }
         },
-        topUpBalance: async (_, args, context) => {
+        generateMidtranToken: async (_, args, context) => {
             try {
                 const { amount } = args
                 const { user, error } = context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const midtransToken = await generateMidtransToken(user, amount)
 
-                let snap = new midtransClient.Snap({
-                    isProduction: false,
-                    serverKey: process.env.MIDTRANS_API_KEY
-                });
 
-                let parameter = {
-                    transaction_details: {
-                        order_id: "UBIKE" + Math.floor(1000000 + Math.random() * 9000000),
-                        gross_amount: totalPrice
-                    },
-                    credit_card: {
-                        secure: true
-                    },
-                    customer_details: {
-                        username: user.username,
-                        email: user.email
-                    }
-                };
-                const midtransToken = await snap.createTransaction(parameter)
                 console.log(midtransToken);
                 return midtransToken
             } catch (err) {
                 console.log(err);
+            }
+        },
+        topUpBalance: async (_, args, context) => {
+            const t = await sequelize.transaction()
+            try {
+                const { amount } = args
+                const { user, error } = context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const verifyUser = await User.findByPk(user.id, { transaction: t })
+                const newBalance = (verifyUser.balance || 0) + amount
+                await User.update({ balance: newBalance }, { where: { id: user.id } }, { transaction: t })
+                await Transaction.create({ action: 'Deposit', amount, UserId: user.id }, { transaction: t })
+                await t.commit()
+                return `success top up with amount ${amount}`
+            } catch (err) {
+                t.rollback()
+                console.log(err);
+                throw err
             }
         }
     }
