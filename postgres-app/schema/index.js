@@ -81,6 +81,18 @@ type Mutation {
        StationId: Int!
     ): String
 
+    editBicycle(
+        bicycleId: Int!
+        name: String!
+        feature: String!
+        imageURL: String!
+        description: String!
+        price: Int!
+       StationId: Int!
+    ): String
+
+    deleteBicycle(bicycleId: Int!): String
+
     createUser(
         username: String!
         email: String!
@@ -180,6 +192,30 @@ const resolvers = {
                 throw err
             }
         },
+        editBicycle: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                const { name, feature, imageURL, description, price, StationId, bicycleId } = args
+                await Bicycles.update({name, feature, imageURL, description, price, StationId}, {where: {id: bicycleId}})
+                return `Bicycle with id ${bicycleId} updated`
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        deleteBicycle: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                const {bicycleId} = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Bicycles.destroy({where: {id: bicycleId}})
+                return `bicycle with id ${bicycleId} has been successfully deleted.`
+            }catch(err){
+                console.log(err);
+                throw err
+            }
+        },
         createUser: async (_, args) => {
             try {
                 const { username, email, password, role } = args
@@ -228,8 +264,8 @@ const resolvers = {
                 const newBalance = user.balance - totalPrice
                 await Rental.update({ status: true, travelledDistance, totalPrice, transaction }, { where: { id: rentalId } }, { transaction: t })
                 await Bicycles.update({ status: true, StationId }, { where: { id: rental.BicycleId } }, { transaction: t })
-                await Transaction.create({action: 'Payment', amount: totalPrice, UserId: user.id}, { transaction: t })
-                await User.update({balance: newBalance}, {where: {id: user.id}}, { transaction: t })
+                await Transaction.create({ action: 'Payment', amount: totalPrice, UserId: user.id }, { transaction: t })
+                await User.update({ balance: newBalance }, { where: { id: user.id } }, { transaction: t })
                 await t.commit()
 
                 return 'Rent done'
