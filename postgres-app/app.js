@@ -4,13 +4,23 @@ const { startStandaloneServer } = require('@apollo/server/standalone')
 const [typeDefs, resolvers] = require('./schema/index')
 const context = require('./middlewares/auth')
 
-const server = new ApolloServer({
-    typeDefs: typeDefs,
-    resolvers: resolvers,
-    introspection: true,
-})
+const options = { port: 4000 }
 
-startStandaloneServer(server, {
-    listen: { port: process.env.PORT || 4000 },
-    context: context,
-}).then(({ url }) => console.log(`🚀 Server ready at ${url}`))
+async function createApolloServer(options) {
+  try {
+    const server = new ApolloServer({
+      typeDefs,
+      resolvers,
+      introspection: true,
+    });  
+    const { url } = await startStandaloneServer(server, { listen: options, context: context }) // <==== bug <==== bug-fixed by Bayu
+    return { server, url };
+  } catch (error) {
+    console.log(error, "<<< masuk error app.js")
+    throw error;
+  }
+}
+
+createApolloServer(options)
+
+module.exports = { createApolloServer, startStandaloneServer }
