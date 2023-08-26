@@ -51,6 +51,14 @@ type Rentals {
     upatedAt: String
 }
 
+type Transactions {
+    id: Int
+    action: String
+    amount: Int
+    UserId: Int
+    User: Users
+}
+
 type MidtranToken {
     token: String
     redirect_url: String
@@ -62,6 +70,8 @@ type Query {
     getUsers: [Users]
     getRentals: [Rentals]
     getStationsById(stationId: Int): Stations
+    getTransactions: [Transactions]
+    userHistoryTransaction(UserId: Int): [Transactions]
 }
 
 type Mutation {
@@ -176,6 +186,40 @@ const resolvers = {
                 console.log(err);
                 throw err
             }
+        },
+        getTransactions: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
+            const data = await Transaction.findAll({
+                include: [
+                  {
+                    model: User,
+                    attributes: {
+                      exclude: ['password']
+                    },
+                  },
+                ],
+              })
+            return data
+        },
+        userHistoryTransaction: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const {UserId} = args
+                const data = await Transaction.findAll({where: {UserId}, include: [
+                    {
+                      model: User,
+                      attributes: {
+                        exclude: ['password']
+                      },
+                    },
+                  ],});
+                  return data
+            }catch(err){
+                console.log(err);
+                throw err
+            }
         }
     },
     Mutation: {
@@ -190,26 +234,26 @@ const resolvers = {
                 throw err
             }
         },
-        editStation: async (_,args,context) => {
-            try{
+        editStation: async (_, args, context) => {
+            try {
                 const { user, error } = await context
                 const { name, address, latitude, longtitude, stationId } = args
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                await Station.update({name, address, latitude, longtitude}, {where: {id: stationId}})
+                await Station.update({ name, address, latitude, longtitude }, { where: { id: stationId } })
                 return `station with id ${stationId} has been updated`
-            }catch(err){
+            } catch (err) {
                 console.log(err);
                 throw err
             }
         },
-        deleteStation: async (_,args,context) => {
-            try{
+        deleteStation: async (_, args, context) => {
+            try {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                const {stationId} = args
-                await Station.destroy({where: {id: stationId}})
+                const { stationId } = args
+                await Station.destroy({ where: { id: stationId } })
                 return `station with id ${stationId} has been deleted`
-            }catch(err){
+            } catch (err) {
                 console.log(err);
                 throw err
             }
