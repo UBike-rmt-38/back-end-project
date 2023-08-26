@@ -4,7 +4,7 @@ const { startStandaloneServer } = require('@apollo/server/standalone')
 const [typeDefs, resolvers] = require('./schema/index')
 const context = require('./middlewares/auth')
 
-const options = { port: 4000 }
+const options = { port: 0 }
 
 async function createApolloServer(options) {
   try {
