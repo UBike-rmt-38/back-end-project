@@ -36,6 +36,7 @@ type Users {
     role: String
     email: String
     password: String 
+    balance: Int
 }
 
 type Rentals {
