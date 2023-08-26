@@ -14,8 +14,11 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       User.hasMany(models.Rental, {
-          foreignKey: 'UserId'
-         })
+        foreignKey: 'UserId'
+      })
+      User.hasMany(models.Transaction, {
+        foreignKey: 'UserId',
+      });
     }
   }
   User.init({
@@ -39,7 +42,8 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         notEmpty: { msg: "please input password" }
       }
-    }
+    },
+    balance: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'User',

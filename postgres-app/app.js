@@ -1,6 +1,9 @@
+if (process.env.NODE_ENV !== "production") require('dotenv').config();
 const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
 const [typeDefs, resolvers] = require('./schema/index')
+const context = require('./middlewares/auth')
+
 const options = { port: 4000 }
 
 async function createApolloServer(options) {
@@ -10,7 +13,7 @@ async function createApolloServer(options) {
       resolvers,
       introspection: true,
     });  
-    const { url } = await startStandaloneServer(server, { listen: options }) // <==== bug <==== bug-fixed by Bayu
+    const { url } = await startStandaloneServer(server, { listen: options, context: context }) // <==== bug <==== bug-fixed by Bayu
     return { server, url };
   } catch (error) {
     console.log(error, "<<< masuk error app.js")
