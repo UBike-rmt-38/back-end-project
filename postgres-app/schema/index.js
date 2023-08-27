@@ -11,7 +11,7 @@ type Stations {
     name: String
     address: String
     latitude: Float
-    longtitude: Float
+    longitude: Float
     Bicycles: [Bicycles]
     createdAt: String
     upatedAt: String
@@ -23,7 +23,7 @@ type Categories {
     description: String
     Bicycles: [Bicycles]
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Bicycles {
@@ -36,7 +36,7 @@ type Bicycles {
     StationId: Int
     status: Boolean
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Users {
@@ -57,7 +57,15 @@ type Rentals {
     BicycleId: Int 
     transaction: String
     createdAt: String
-    upatedAt: String
+    updatedAt: String
+}
+
+type Transactions {
+    id: Int
+    action: String
+    amount: Int
+    UserId: Int
+    User: Users
 }
 
 type MidtranToken {
@@ -73,6 +81,8 @@ type Query {
     getRentals: [Rentals]
     getCategoriesById(categoryId: Int): Categories
     getStationsById(stationId: Int): Stations
+    getTransactions: [Transactions]
+    userHistoryTransaction(UserId: Int): [Transactions]
 }
 
 type Mutation {
@@ -80,7 +90,7 @@ type Mutation {
         name: String!
         address: String!
         latitude: Float!
-        longtitude: Float!
+        longitude: Float!
     ): String
 
     deleteStation(stationId: Int!): String
@@ -93,6 +103,16 @@ type Mutation {
 
     deleteCategory(categoryId: Int!): String
     
+    editStation(
+        stationId: Int!
+        name: String!
+        address: String!
+        latitude: Float!
+        longitude: Float!
+    ): String
+
+    deleteStation(stationId: Int!): String
+
     addBicycle(
         name: String!
         feature: String!
@@ -192,6 +212,39 @@ const resolvers = {
                 })
                 return data
             } catch (err) {
+                throw err
+            }
+        },
+        getTransactions: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
+            const data = await Transaction.findAll({
+                include: [
+                  {
+                    model: User,
+                    attributes: {
+                      exclude: ['password']
+                    },
+                  },
+                ],
+              })
+            return data
+        },
+        userHistoryTransaction: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const {UserId} = args
+                const data = await Transaction.findAll({where: {UserId}, include: [
+                    {
+                      model: User,
+                      attributes: {
+                        exclude: ['password']
+                      },
+                    },
+                  ],});
+                  return data
+            } catch(err) {
                 console.log(err);
                 throw err
             }
@@ -219,8 +272,8 @@ const resolvers = {
             try {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                const { name, address, latitude, longtitude } = args
-                await Station.create({ name, address, latitude, longtitude })
+                const { name, address, latitude, longitude } = args
+                await Station.create({ name, address, latitude, longitude })
                 return 'Station created'
             } catch (err) {
                 throw err
@@ -234,6 +287,27 @@ const resolvers = {
                 await Category.create({ name, description })
                 return 'Category created'
             } catch (err) {
+        editStation: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                const { name, address, latitude, longitude, stationId } = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Station.update({ name, address, latitude, longitude }, { where: { id: stationId } })
+                return `station with id ${stationId} has been updated`
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        deleteStation: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                const { stationId } = args
+                await Station.destroy({ where: { id: stationId } })
+                return `station with id ${stationId} has been deleted`
+            } catch (err) {
+                console.log(err);
                 throw err
             }
         },
@@ -254,21 +328,21 @@ const resolvers = {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
                 const { name, feature, imageURL, description, price, StationId, bicycleId } = args
-                await Bicycles.update({name, feature, imageURL, description, price, StationId}, {where: {id: bicycleId}})
-                return `Bicycle with id ${bicycleId} updated`
+                await Bicycles.update({ name, feature, imageURL, description, price, StationId }, { where: { id: bicycleId } })
+                return `Bicycle with id ${bicycleId} has been updated`
             } catch (err) {
                 console.log(err);
                 throw err
             }
         },
-        deleteBicycle: async (_,args,context) => {
-            try{
+        deleteBicycle: async (_, args, context) => {
+            try {
                 const { user, error } = await context
-                const {bicycleId} = args
+                const { bicycleId } = args
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                await Bicycles.destroy({where: {id: bicycleId}})
+                await Bicycles.destroy({ where: { id: bicycleId } })
                 return `bicycle with id ${bicycleId} has been successfully deleted.`
-            }catch(err){
+            } catch (err) {
                 console.log(err);
                 throw err
             }
@@ -363,9 +437,9 @@ const resolvers = {
             try {
                 const { username, password } = args
                 const user = await User.findOne({ where: { username } })
-                if (!user) return 'invalid username\password'
+                if (!user) throw 'invalid username\password'
                 const verifyPassword = bcrypt.compareSync(password, user.password)
-                if (!verifyPassword) return 'invalid username\password'
+                if (!verifyPassword) throw 'invalid username\password'
                 const access_token = signToken(user)
                 return access_token
             } catch (err) {
@@ -408,4 +482,4 @@ const resolvers = {
     }
 }
 
-module.exports = [typeDefs, resolvers]
+module.exports = [typeDefs, resolvers];

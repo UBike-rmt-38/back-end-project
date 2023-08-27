@@ -210,294 +210,293 @@ describe("GraphQL Test Coverage", () => {
         expect(createUser).toEqual(null);
       })
     })
+    // add new station
+    describe('addStation', () => {
+      test('success add and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "test",
+          latitude: "0.1222222",
+          longtitude: "08.9999"
+        }
 
-    // // add new station
-    // describe('addStation', () => {
-    //   test('success add and return 200', async () => {
-    //     const bodyData = {
-    //       name: "test",
-    //       address: "test",
-    //       latitude: "0.1222222",
-    //       longtitude: "08.9999"
-    //     }
+        const response = await request(url).post("/").send({
+          query: createStations.query,
+          variables: bodyData
+        });
 
-    //     const response = await request(url).post("/").send({
-    //       query: createStations.query,
-    //       variables: bodyData
-    //     });
+        const { addStation } = response.body.data
 
-    //     const { addStation } = response.body.data
+        expect(response.status).toBe(200);
+        expect(addStation).toEqual("Station created");
+      })
 
-    //     expect(response.status).toBe(200);
-    //     expect(addStation).toEqual("Station created");
-    //   })
+      test('failed add and return 200', async () => {
 
-    //   test('failed add and return 200', async () => {
+        const response = await request(url).post("/").send({
+          query: createStations.query,
+          variables: {}
+        });
 
-    //     const response = await request(url).post("/").send({
-    //       query: createStations.query,
-    //       variables: {}
-    //     });
+        expect(response.status).toBe(200);
+        const { addStation } = response.body.data
+        expect(addStation).toEqual(null);
+      })
+    })
 
-    //     expect(response.status).toBe(200);
-    //     const { addStation } = response.body.data
-    //     expect(addStation).toEqual(null);
-    //   })
-    // })
+    // add new bicycle
+    describe('addBicycle', () => {
+      test('success add and return 200', async () => {
+        const bodyData = {
+          name: "testing",
+          feature: "testing",
+          imageUrl: "testing",
+          description: "test new",
+          price: 120000,
+          stationId: 1,  
+        }
 
-    // // add new bicycle
-    // describe('addBicycle', () => {
-    //   test('success add and return 200', async () => {
-    //     const bodyData = {
-    //       name: "testing",
-    //       feature: "testing",
-    //       imageUrl: "testing",
-    //       description: "test new",
-    //       price: 120000,
-    //       stationId: 1,  
-    //     }
+        const response = await request(url).post("/").send({
+          query: createBicycles.query,
+          variables: bodyData
+        });
 
-    //     const response = await request(url).post("/").send({
-    //       query: createBicycles.query,
-    //       variables: bodyData
-    //     });
+        const { addBicycle } = response.body.data
 
-    //     const { addBicycle } = response.body.data
+        expect(response.status).toBe(200);
+        expect(addBicycle).toEqual("Bicycle created");
+      })
 
-    //     expect(response.status).toBe(200);
-    //     expect(addBicycle).toEqual("Bicycle created");
-    //   })
+      test('failed add and return 200', async () => {
 
-    //   test('failed add and return 200', async () => {
+        const response = await request(url).post("/").send({
+          query: createBicycles.query,
+          variables: {}
+        });
 
-    //     const response = await request(url).post("/").send({
-    //       query: createBicycles.query,
-    //       variables: {}
-    //     });
+        expect(response.status).toBe(200);
+        expect(response.errors).toBeUndefined();
+      })
+    })
 
-    //     expect(response.status).toBe(200);
-    //     expect(response.errors).toBeUndefined();
-    //   })
-    // })
+    // create rent
+    describe('createRental', () => {
+      test('success create and return 200', async () => {
+        const bodyData = {
+          userId: 1,
+          bicycleId: 1
+        }
 
-    // // create rent
-    // describe('createRental', () => {
-    //   test('success create and return 200', async () => {
-    //     const bodyData = {
-    //       userId: 1,
-    //       bicycleId: 1
-    //     }
+        const response = await request(url).post("/").send({
+          query: createRent.query,
+          variables: bodyData
+        });
 
-    //     const response = await request(url).post("/").send({
-    //       query: createRent.query,
-    //       variables: bodyData
-    //     });
+        const { createRental } = response.body.data
 
-    //     const { createRental } = response.body.data
+        expect(response.status).toBe(200);
+        expect(createRental).toEqual("Rent start");
+      })
 
-    //     expect(response.status).toBe(200);
-    //     expect(createRental).toEqual("Rent start");
-    //   })
+      test('failed add and return 200', async () => {
 
-    //   test('failed add and return 200', async () => {
+        const response = await request(url).post("/").send({
+          query: createRent.query,
+          variables: {}
+        });
 
-    //     const response = await request(url).post("/").send({
-    //       query: createRent.query,
-    //       variables: {}
-    //     });
-
-    //     expect(response.status).toBe(200);
-    //     const { createRental } = response.body.data
-    //     expect(createRental).toEqual(null);
-    //   })
-    // })
+        expect(response.status).toBe(200);
+        const { createRental } = response.body.data
+        expect(createRental).toEqual(null);
+      })
+    })
 
 
-    // // update rent
-    // describe('updateRental', () => {
-    //   test('success update and return 200', async () => {
-    //     const bodyData = {
-    //       rentalId: 1,
-    //       travelledDistance: 123456,
-    //       totalPrice: 200000,
-    //       stationId: 1
-    //     }
+    // update rent
+    describe('updateRental', () => {
+      test('success update and return 200', async () => {
+        const bodyData = {
+          rentalId: 1,
+          travelledDistance: 123456,
+          totalPrice: 200000,
+          stationId: 1
+        }
 
-    //     const response = await request(url).post("/").send({
-    //       query: updateRent.query,
-    //       variables: bodyData
-    //     });
+        const response = await request(url).post("/").send({
+          query: updateRent.query,
+          variables: bodyData
+        });
 
-    //     const { updateRental } = response.body.data
+        const { updateRental } = response.body.data
 
-    //     expect(response.status).toBe(200);
-    //     expect(updateRental).toEqual("Rent done");
-    //   })
+        expect(response.status).toBe(200);
+        expect(updateRental).toEqual("Rent done");
+      })
 
-    //   test('failed update and return 200', async () => {
+      test('failed update and return 200', async () => {
 
-    //     const response = await request(url).post("/").send({
-    //       query: updateRent.query,
-    //       variables: {}
-    //     });
+        const response = await request(url).post("/").send({
+          query: updateRent.query,
+          variables: {}
+        });
 
-    //     expect(response.status).toBe(200);
-    //     const { updateRental } = response.body.data
-    //     expect(updateRental).toEqual(null);
-    //   })
-    // })
+        expect(response.status).toBe(200);
+        const { updateRental } = response.body.data
+        expect(updateRental).toEqual(null);
+      })
+    })
   })
 
   // < ----- Query Test ----- >
-  // describe('Query Test Endpoints', () => {
-  //   // get all bicycles
-  //   describe("getBicycles", () => {
-  //     test("success return object and return 200", async () => {
-  //       const response = await request(url)
-  //         .post("/")
-  //         .send(getBicycles);
+  describe('Query Test Endpoints', () => {
+    // get all bicycles
+    describe("getBicycles", () => {
+      test("success return object and return 200", async () => {
+        const response = await request(url)
+          .post("/")
+          .send(getBicycles);
 
-  //       expect(response.status).toBe(200);
-  //       expect(response.body).toBeInstanceOf(Object);
-  //       expect(response.errors).toBeUndefined();
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
 
-  //       const { data } = response.body
+        const { data } = response.body
 
-  //       if (data.getBicycles.length > 0) {
-  //         expect(data.getBicycles[0]).toHaveProperty("id", expect.any(Number));
-  //         expect(data.getBicycles[0]).toHaveProperty("name", expect.any(String));
-  //         expect(data.getBicycles[0]).toHaveProperty("feature", expect.any(String));
-  //         expect(data.getBicycles[0]).toHaveProperty("imageURL", expect.any(String));
-  //         expect(data.getBicycles[0]).toHaveProperty("description", expect.any(String));
-  //         expect(data.getBicycles[0]).toHaveProperty("price", expect.any(Number));
-  //         expect(data.getBicycles[0]).toHaveProperty("StationId", expect.any(Number));
-  //         expect(data.getBicycles[0]).toHaveProperty("status", expect.any(Boolean));
-  //       }
-  //     });
-  //   });
+        if (data.getBicycles.length > 0) {
+          expect(data.getBicycles[0]).toHaveProperty("id", expect.any(Number));
+          expect(data.getBicycles[0]).toHaveProperty("name", expect.any(String));
+          expect(data.getBicycles[0]).toHaveProperty("feature", expect.any(String));
+          expect(data.getBicycles[0]).toHaveProperty("imageURL", expect.any(String));
+          expect(data.getBicycles[0]).toHaveProperty("description", expect.any(String));
+          expect(data.getBicycles[0]).toHaveProperty("price", expect.any(Number));
+          expect(data.getBicycles[0]).toHaveProperty("StationId", expect.any(Number));
+          expect(data.getBicycles[0]).toHaveProperty("status", expect.any(Boolean));
+        }
+      });
+    });
 
-  //   // get all stations
-  //   describe("getStations", () => {
-  //     test("success return of object and return 200", async () => {
-  //       const response = await request(url)
-  //         .post("/")
-  //         .send(getStations);
+    // get all stations
+    describe("getStations", () => {
+      test("success return of object and return 200", async () => {
+        const response = await request(url)
+          .post("/")
+          .send(getStations);
 
-  //       expect(response.status).toBe(200);
-  //       expect(response.body).toBeInstanceOf(Object); // <=== body nya GraphQL itu property bername "data" yang mana itu Object, bukan Array
-  //       expect(response.errors).toBeUndefined();
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object); // <=== body nya GraphQL itu property bername "data" yang mana itu Object, bukan Array
+        expect(response.errors).toBeUndefined();
 
-  //       const { data } = response.body
+        const { data } = response.body
 
-  //       if (data.getStations.length > 0) {
-  //         expect(data.getStations[0]).toHaveProperty("id", expect.any(Number));
-  //         expect(data.getStations[0]).toHaveProperty("name", expect.any(String));
-  //         expect(data.getStations[0]).toHaveProperty("address", expect.any(String));
-  //         expect(data.getStations[0]).toHaveProperty("latitude", expect.any(String));
-  //         expect(data.getStations[0]).toHaveProperty("longtitude", expect.any(String));
-  //       }
-  //     });
-  //   });
+        if (data.getStations.length > 0) {
+          expect(data.getStations[0]).toHaveProperty("id", expect.any(Number));
+          expect(data.getStations[0]).toHaveProperty("name", expect.any(String));
+          expect(data.getStations[0]).toHaveProperty("address", expect.any(String));
+          expect(data.getStations[0]).toHaveProperty("latitude", expect.any(String));
+          expect(data.getStations[0]).toHaveProperty("longtitude", expect.any(String));
+        }
+      });
+    });
 
-  //   // getStationById
-  //   describe('getStationById', (done) => {
-  //     test('success return object and return 200', async () => {
-  //       const response = await request(url)
-  //         .post("/")
-  //         .send({
-  //           query: getStationsById.query,
-  //           variables: { stationId: 1 }
-  //         })
+    // getStationById
+    describe('getStationById', (done) => {
+      test('success return object and return 200', async () => {
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getStationsById.query,
+            variables: { stationId: 1 }
+          })
 
-  //       expect(response.status).toBe(200)
-  //       expect(response.body).toBeInstanceOf(Object);
-  //       expect(response.errors).toBeUndefined();
+        expect(response.status).toBe(200)
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
 
-  //       const { data } = response.body
+        const { data } = response.body
 
-  //       expect(data.getStationsById).toHaveProperty("id", expect.any(Number));
-  //       expect(data.getStationsById).toHaveProperty("name", expect.any(String));
-  //       expect(data.getStationsById).toHaveProperty("address", expect.any(String));
-  //       expect(data.getStationsById).toHaveProperty("latitude", expect.any(String));
-  //       expect(data.getStationsById).toHaveProperty("longtitude", expect.any(String));
+        expect(data.getStationsById).toHaveProperty("id", expect.any(Number));
+        expect(data.getStationsById).toHaveProperty("name", expect.any(String));
+        expect(data.getStationsById).toHaveProperty("address", expect.any(String));
+        expect(data.getStationsById).toHaveProperty("latitude", expect.any(String));
+        expect(data.getStationsById).toHaveProperty("longtitude", expect.any(String));
 
-  //       const { Bicycles } = data.getStationsById
-  //       expect(Bicycles).toBeInstanceOf(Array);
+        const { Bicycles } = data.getStationsById
+        expect(Bicycles).toBeInstanceOf(Array);
 
-  //       if (Bicycles.length > 0) {
-  //         const bicycle = Bicycles[0];
+        if (Bicycles.length > 0) {
+          const bicycle = Bicycles[0];
 
-  //         expect(bicycle).toHaveProperty("id", expect.any(Number));
-  //         expect(bicycle).toHaveProperty("name", expect.any(String));
-  //         expect(bicycle).toHaveProperty("feature", expect.any(String));
-  //         expect(bicycle).toHaveProperty("imageURL", expect.any(String));
-  //         expect(bicycle).toHaveProperty("description", expect.any(String));
-  //         expect(bicycle).toHaveProperty("price", expect.any(Number));
-  //         expect(bicycle).toHaveProperty("StationId", expect.any(Number));
-  //         expect(bicycle).toHaveProperty("status", expect.any(Boolean));
-  //       }
+          expect(bicycle).toHaveProperty("id", expect.any(Number));
+          expect(bicycle).toHaveProperty("name", expect.any(String));
+          expect(bicycle).toHaveProperty("feature", expect.any(String));
+          expect(bicycle).toHaveProperty("imageURL", expect.any(String));
+          expect(bicycle).toHaveProperty("description", expect.any(String));
+          expect(bicycle).toHaveProperty("price", expect.any(Number));
+          expect(bicycle).toHaveProperty("StationId", expect.any(Number));
+          expect(bicycle).toHaveProperty("status", expect.any(Boolean));
+        }
 
-  //     })
-  //     test('data not found and return 200', async () => {
-  //       const response = await request(url)
-  //         .post("/")
-  //         .send({
-  //           query: getStationsById.query,
-  //           variables: { stationId: 999 }
-  //         });
+      })
+      test('data not found and return 200', async () => {
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getStationsById.query,
+            variables: { stationId: 999 }
+          });
 
-  //       expect(response.status).toBe(200);
-  //       const { data } = response.body
+        expect(response.status).toBe(200);
+        const { data } = response.body
 
-  //       expect(data.getStationsById).toEqual(null);
-  //     })
-  //   })
+        expect(data.getStationsById).toEqual(null);
+      })
+    })
 
-  //   // get all users
-  //   describe("getUsers", () => {
-  //     test("success return of object and return 200", async () => {
-  //       const response = await request(url)
-  //         .post("/")
-  //         .send(getUsers);
+    // get all users
+    describe("getUsers", () => {
+      test("success return of object and return 200", async () => {
+        const response = await request(url)
+          .post("/")
+          .send(getUsers);
 
-  //       expect(response.status).toBe(200);
-  //       expect(response.body).toBeInstanceOf(Object); // <=== body nya GraphQL itu property bername "data" yang mana itu Object, bukan Array
-  //       expect(response.errors).toBeUndefined();
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object); // <=== body nya GraphQL itu property bername "data" yang mana itu Object, bukan Array
+        expect(response.errors).toBeUndefined();
 
-  //       const { data } = response.body
+        const { data } = response.body
 
-  //       if (data.getUsers.length > 0) {
-  //         expect(data.getUsers[0]).toHaveProperty("id", expect.any(Number));
-  //         expect(data.getUsers[0]).toHaveProperty("username", expect.any(String));
-  //         expect(data.getUsers[0]).toHaveProperty("role", expect.any(String));
-  //         expect(data.getUsers[0]).toHaveProperty("email", expect.any(String));
-  //         expect(data.getUsers[0]).toHaveProperty("password", expect.any(String));
-  //       }
-  //     });
-  //   });
+        if (data.getUsers.length > 0) {
+          expect(data.getUsers[0]).toHaveProperty("id", expect.any(Number));
+          expect(data.getUsers[0]).toHaveProperty("username", expect.any(String));
+          expect(data.getUsers[0]).toHaveProperty("role", expect.any(String));
+          expect(data.getUsers[0]).toHaveProperty("email", expect.any(String));
+          expect(data.getUsers[0]).toHaveProperty("password", expect.any(String));
+        }
+      });
+    });
 
-  //   // get all rentals
-  //   describe("getRentals", () => {
-  //     test("success return of object and return 200", async () => {
-  //       const response = await request(url)
-  //         .post("/")
-  //         .send(getRentals);
+    // get all rentals
+    describe("getRentals", () => {
+      test("success return of object and return 200", async () => {
+        const response = await request(url)
+          .post("/")
+          .send(getRentals);
 
-  //       expect(response.status).toBe(200);
-  //       expect(response.body).toBeInstanceOf(Object); // <=== body nya GraphQL itu property bername "data" yang mana itu Object, bukan Array
-  //       expect(response.errors).toBeUndefined();
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object); // <=== body nya GraphQL itu property bername "data" yang mana itu Object, bukan Array
+        expect(response.errors).toBeUndefined();
 
-  //       const { data } = response.body
+        const { data } = response.body
 
-  //       if (data.getRentals.length > 0) {
-  //         expect(data.getRentals[0]).toHaveProperty("id", expect.any(Number));
-  //         expect(data.getRentals[0]).toHaveProperty("status", expect.any(Boolean));
-  //         expect(data.getRentals[0]).toHaveProperty("travelledDistance", expect.any(Number));
-  //         expect(data.getRentals[0]).toHaveProperty("totalPrice", expect.any(Number));
-  //         expect(data.getRentals[0]).toHaveProperty("UserId", expect.any(Number));
-  //         expect(data.getRentals[0]).toHaveProperty("BicycleId", expect.any(Number));
-  //       }
-  //     });
-  //   });
-  // })
+        if (data.getRentals.length > 0) {
+          expect(data.getRentals[0]).toHaveProperty("id", expect.any(Number));
+          expect(data.getRentals[0]).toHaveProperty("status", expect.any(Boolean));
+          expect(data.getRentals[0]).toHaveProperty("travelledDistance", expect.any(Number));
+          expect(data.getRentals[0]).toHaveProperty("totalPrice", expect.any(Number));
+          expect(data.getRentals[0]).toHaveProperty("UserId", expect.any(Number));
+          expect(data.getRentals[0]).toHaveProperty("BicycleId", expect.any(Number));
+        }
+      });
+    });
+  })
 });
