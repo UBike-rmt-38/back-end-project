@@ -1,13 +1,15 @@
 const { ApolloServer } = require("@apollo/server");
 const { startStandaloneServer } = require("../app");
-const [typeDefs, resolvers] = require("../schema/index")
+const [typeDefs, resolvers] = require("../schema/index");
+const context = require("../middlewares/auth");
 
 const server = new ApolloServer({
   typeDefs: typeDefs,
   resolvers: resolvers,
-  introspection: true
-})
+  introspection: true,
+});
 
 startStandaloneServer(server, {
-    listen: { port: process.env.PORT || 4000 }
-}).then(({ url }) => console.log(`🚀 Server ready at ${url}`))
+  listen: { port: process.env.PORT || 4000 },
+  context: context, // <==== jangan lupa untuk masang context juga di env development
+}).then(({ url }) => console.log(`🚀 Server ready at ${url}`));

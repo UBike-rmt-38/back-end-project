@@ -10,8 +10,8 @@ type Stations {
     id: Int 
     name: String
     address: String
-    latitude: String
-    longtitude: String
+    latitude: Int
+    longitude: Int
     Bicycles: [Bicycles]
     createdAt: String
     upatedAt: String
@@ -78,16 +78,16 @@ type Mutation {
     addStation(
         name: String!
         address: String!
-        latitude: String!
-        longtitude: String!
+        latitude: Int!
+        longitude: Int!
     ): String
     
     editStation(
         stationId: Int!
         name: String!
         address: String!
-        latitude: String!
-        longtitude: String!
+        latitude: Int!
+        longitude: Int!
     ): String
 
     deleteStation(stationId: Int!): String
@@ -183,7 +183,6 @@ const resolvers = {
                 })
                 return data
             } catch (err) {
-                console.log(err);
                 throw err
             }
         },
@@ -216,7 +215,7 @@ const resolvers = {
                     },
                   ],});
                   return data
-            }catch(err){
+            } catch(err) {
                 console.log(err);
                 throw err
             }
@@ -227,8 +226,8 @@ const resolvers = {
             try {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                const { name, address, latitude, longtitude } = args
-                await Station.create({ name, address, latitude, longtitude })
+                const { name, address, latitude, longitude } = args
+                await Station.create({ name, address, latitude, longitude })
                 return 'Station created'
             } catch (err) {
                 throw err
@@ -237,9 +236,9 @@ const resolvers = {
         editStation: async (_, args, context) => {
             try {
                 const { user, error } = await context
-                const { name, address, latitude, longtitude, stationId } = args
+                const { name, address, latitude, longitude, stationId } = args
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                await Station.update({ name, address, latitude, longtitude }, { where: { id: stationId } })
+                await Station.update({ name, address, latitude, longitude }, { where: { id: stationId } })
                 return `station with id ${stationId} has been updated`
             } catch (err) {
                 console.log(err);
@@ -357,9 +356,9 @@ const resolvers = {
             try {
                 const { username, password } = args
                 const user = await User.findOne({ where: { username } })
-                if (!user) return 'invalid username\password'
+                if (!user) throw 'invalid username\password'
                 const verifyPassword = bcrypt.compareSync(password, user.password)
-                if (!verifyPassword) return 'invalid username\password'
+                if (!verifyPassword) throw 'invalid username\password'
                 const access_token = signToken(user)
                 return access_token
             } catch (err) {
