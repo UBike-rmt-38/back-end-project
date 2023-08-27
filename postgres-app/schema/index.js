@@ -93,9 +93,6 @@ type Mutation {
         longitude: Float!
     ): String
 
-    deleteStation(stationId: Int!): String
-
-
     addCategory(
         name: String!
         description: String!
@@ -287,6 +284,9 @@ const resolvers = {
                 await Category.create({ name, description })
                 return 'Category created'
             } catch (err) {
+                throw error
+            }
+        },
         editStation: async (_, args, context) => {
             try {
                 const { user, error } = await context
@@ -360,20 +360,6 @@ const resolvers = {
                 throw err
             }
         },
-
-        deleteStation: async (_,args,context) => {
-            try{
-                const { user, error } = await context
-                const {stationId} = args
-                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                await Station.destroy({where: {id: stationId}})
-                return `Station with id ${stationId} has been successfully deleted.`
-            }catch(err){
-                console.log(err);
-                throw err
-            }
-        },
-
         createUser: async (_, args) => {
             try {
                 const { username, email, password, role } = args
