@@ -210,7 +210,6 @@ describe("GraphQL Test Coverage", () => {
         expect(createUser).toEqual(null);
       })
     })
-
     // add new station
     describe('addStation', () => {
       test('success add and return 200', async () => {

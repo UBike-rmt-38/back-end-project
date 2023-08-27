@@ -1,7 +1,7 @@
 "use strict";
 const bcrypt = require('bcrypt')
 const { AuthenticationError } = require('apollo-server');
-const { User, Bicycles, Rental, Station, sequelize, Transaction } = require('../models/index');
+const { User, Bicycles, Rental, Station, sequelize, Transaction, Category } = require('../models/index');
 const { signToken } = require('../helpers/jwt');
 const generateMidtransToken = require('../helpers/generateMidtransToken');
 
@@ -12,6 +12,15 @@ type Stations {
     address: String
     latitude: Float
     longitude: Float
+    Bicycles: [Bicycles]
+    createdAt: String
+    upatedAt: String
+}
+
+type Categories {
+    id: Int
+    name: String
+    description: String
     Bicycles: [Bicycles]
     createdAt: String
     updatedAt: String
@@ -67,8 +76,10 @@ type MidtranToken {
 type Query {
     getStations: [Stations]
     getBicycles: [Bicycles]
+    getCategories: [Categories]
     getUsers: [Users]
     getRentals: [Rentals]
+    getCategoriesById(categoryId: Int): Categories
     getStationsById(stationId: Int): Stations
     getTransactions: [Transactions]
     userHistoryTransaction(UserId: Int): [Transactions]
@@ -81,6 +92,16 @@ type Mutation {
         latitude: Float!
         longitude: Float!
     ): String
+
+    deleteStation(stationId: Int!): String
+
+
+    addCategory(
+        name: String!
+        description: String!
+    ): String
+
+    deleteCategory(categoryId: Int!): String
     
     editStation(
         stationId: Int!
@@ -153,6 +174,14 @@ const resolvers = {
             const data = await Station.findAll({ include: { model: Bicycles } })
             return data
         },
+
+        getCategories: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
+            const data = await Category.findAll({ include: { model: Bicycles } })
+            return data
+        },
+
         getBicycles: async (_, __, context) => {
             const { user, error } = await context
             if (!user) { throw new AuthenticationError(error.message); }
@@ -219,6 +248,23 @@ const resolvers = {
                 console.log(err);
                 throw err
             }
+        },
+
+        getCategoriesById: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const { categoryId } = args
+                const data = await Category.findByPk(categoryId, {
+                    include: {
+                        model: Bicycles
+                    }
+                })
+                return data
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
         }
     },
     Mutation: {
@@ -233,6 +279,14 @@ const resolvers = {
                 throw err
             }
         },
+        addCategory: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                const { name, description } = args
+                await Category.create({ name, description })
+                return 'Category created'
+            } catch (err) {
         editStation: async (_, args, context) => {
             try {
                 const { user, error } = await context
@@ -293,6 +347,33 @@ const resolvers = {
                 throw err
             }
         },
+
+        deleteCategory: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                const {categoryId} = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Category.destroy({where: {id: categoryId}})
+                return `Category with id ${categoryId} has been successfully deleted.`
+            }catch(err){
+                console.log(err);
+                throw err
+            }
+        },
+
+        deleteStation: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                const {stationId} = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Station.destroy({where: {id: stationId}})
+                return `Station with id ${stationId} has been successfully deleted.`
+            }catch(err){
+                console.log(err);
+                throw err
+            }
+        },
+
         createUser: async (_, args) => {
             try {
                 const { username, email, password, role } = args

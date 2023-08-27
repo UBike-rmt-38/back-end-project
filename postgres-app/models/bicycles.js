@@ -12,6 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
       Bicycles.belongsTo(models.Station)
+      Bicycles.belongsTo(models.Category)
       Bicycles.hasMany(models.Rental, {
           foreignKey: 'BicycleId'
          })
@@ -49,6 +50,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     StationId: DataTypes.INTEGER,
+    CategoryId: DataTypes.INTEGER,
     status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

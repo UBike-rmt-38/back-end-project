@@ -20,7 +20,6 @@ async function createApolloServer(options) {
     throw error;
   }
 }
-
 createApolloServer(options)
 
 module.exports = { createApolloServer, startStandaloneServer }

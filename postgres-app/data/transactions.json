@@ -1,0 +1,12 @@
+[
+  {
+    "action": "Deposit",
+    "amount": 100000,
+    "UserId": 1
+  },
+  {
+    "action": "Payment",
+    "amount": 14000,
+    "UserId": 1
+  }
+]
