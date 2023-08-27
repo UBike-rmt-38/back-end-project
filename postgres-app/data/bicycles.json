@@ -6,7 +6,7 @@
     "description": "masih belum ada",
     "price": 7000,
     "StationId": 1,
-    "status": true
+    "CategoryId": 1
   },
   {
     "name": "SIERRA OOSTEN26",
@@ -15,7 +15,7 @@
     "description": "masih belum ada",
     "price": 7500,
     "StationId": 1,
-    "status": true
+    "CategoryId": 2
   },
   {
     "name": "STRATTOS S7D",
@@ -24,7 +24,7 @@
     "description": "masih belum ada",
     "price": 7000,
     "StationId": 2,
-    "status": true
+    "CategoryId": 3
   },
   {
     "name": "IMPRESSION AX DISC",
@@ -33,7 +33,7 @@
     "description": "masih belum ada",
     "price": 5000,
     "StationId": 2,
-    "status": true
+    "CategoryId": 4
   },
   {
     "name": "IMPRESSION AX DISC-2",
@@ -42,7 +42,8 @@
     "description": "masih belum ada",
     "price": 7000,
     "StationId": 3,
-    "status": true
+    "CategoryId": 4
+
   },
   {
     "name": "IMPRESSION AX DISC-3",
@@ -51,6 +52,6 @@
     "description": "masih belum ada",
     "price": 5000,
     "StationId": 3,
-    "status": true
+    "CategoryId": 4
   }
 ]

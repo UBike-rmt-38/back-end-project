@@ -1,7 +1,7 @@
 "use strict";
 const bcrypt = require('bcrypt')
 const { AuthenticationError } = require('apollo-server');
-const { User, Bicycles, Rental, Station, sequelize, Transaction } = require('../models/index');
+const { User, Bicycles, Rental, Station, sequelize, Transaction, Category } = require('../models/index');
 const { signToken } = require('../helpers/jwt');
 const generateMidtransToken = require('../helpers/generateMidtransToken');
 const QRCode = require('qrcode');
@@ -15,6 +15,12 @@ const resolvers = {
             console.log(context, 'cek context');
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await Station.findAll({ include: { model: Bicycles } })
+            return data
+        },
+        getCategories: async (_, __, context) => {
+            const { user, error } = await context
+            if (!user) { throw new AuthenticationError(error.message); }
+            const data = await Category.findAll({ include: { model: Bicycles } })
             return data
         },
         getBicycles: async (_, __, context) => {
@@ -53,6 +59,22 @@ const resolvers = {
                 if (!user) { throw new AuthenticationError(error.message); }
                 const { stationId } = args
                 const data = await Station.findByPk(stationId, {
+                    include: {
+                        model: Bicycles
+                    }
+                })
+                return data
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        getCategoriesById: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const { categoryId } = args
+                const data = await Category.findByPk(categoryId, {
                     include: {
                         model: Bicycles
                     }
@@ -163,6 +185,41 @@ const resolvers = {
                 await Station.destroy({ where: { id: stationId } })
                 return `station with id ${stationId} has been deleted`
             } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        addCategory: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                const { name, description } = args
+                await Category.create({ name, description })
+                return 'Category created'
+            } catch (err) {
+                throw err
+            }
+        },
+        editCategory: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                const { name, description, categoryId } = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Category.update({ name, description }, { where: { id: categoryId } })
+                return `Category with id ${categoryId} has been updated`
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        deleteCategory: async (_,args,context) => {
+            try{
+                const { user, error } = await context
+                const {categoryId} = args
+                if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
+                await Category.destroy({where: {id: categoryId}})
+                return `Category with id ${categoryId} has been successfully deleted.`
+            }catch(err){
                 console.log(err);
                 throw err
             }
