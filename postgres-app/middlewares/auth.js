@@ -4,6 +4,7 @@ const { User } = require('../models/index');
 module.exports = async ({ req }) => {
     const { authorization } = req.headers || '';
     
+    console.log(authorization, "<<<< Auth");
     if (authorization) {
       const payload = verifyToken(authorization)
       const user = await User.findByPk(payload.id)

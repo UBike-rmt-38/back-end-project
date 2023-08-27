@@ -29,7 +29,18 @@ module.exports = {
         references: {
           model: "Stations",
           key: "id"
-        }
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
+      },
+      CategoryId: {
+        type: Sequelize.INTEGER,
+        references: {
+          model: "Categories",
+          key: "id"
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
       createdAt: {
         allowNull: false,

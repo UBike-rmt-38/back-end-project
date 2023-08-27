@@ -3,12 +3,21 @@
     "username": "user1",
     "role": "User",
     "email": "user1@mail.com",
-    "password": "user123"
+    "password": "user123",
+    "balance": 0
   },
   {
     "username": "user2",
     "role": "User",
     "email": "user2@mail.com",
-    "password": "user123"
+    "password": "user123",
+    "balance": 100000
+  },
+  {
+    "username": "admin",
+    "role": "Admin",
+    "email": "admin@mail.com",
+    "password": "admin123",
+    "balance": 200000
   }
 ]

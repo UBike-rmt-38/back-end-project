@@ -5,7 +5,8 @@
     "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2022/01/Path-2-P-768x576.png",
     "description": "masih belum ada",
     "price": 7000,
-    "StationId": 1
+    "StationId": 1,
+    "CategoryId": 1
   },
   {
     "name": "SIERRA OOSTEN26",
@@ -13,7 +14,8 @@
     "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/11/MY21-OOSTEN26-OLVIE--768x512.png",
     "description": "masih belum ada",
     "price": 7500,
-    "StationId": 1
+    "StationId": 1,
+    "CategoryId": 2
   },
   {
     "name": "STRATTOS S7D",
@@ -21,7 +23,8 @@
     "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Strattos-S7D-P-768x576.png",
     "description": "masih belum ada",
     "price": 7000,
-    "StationId": 2
+    "StationId": 2,
+    "CategoryId": 3
   },
   {
     "name": "IMPRESSION AX DISC",
@@ -29,7 +32,8 @@
     "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Impression-AX-Disc-P-768x576.png",
     "description": "masih belum ada",
     "price": 5000,
-    "StationId": 2
+    "StationId": 2,
+    "CategoryId": 4
   },
   {
     "name": "IMPRESSION AX DISC-2",
@@ -37,7 +41,9 @@
     "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Impression-AX-Disc-P-768x576.png",
     "description": "masih belum ada",
     "price": 7000,
-    "StationId": 3
+    "StationId": 3,
+    "CategoryId": 4
+
   },
   {
     "name": "IMPRESSION AX DISC-3",
@@ -45,6 +51,7 @@
     "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Impression-AX-Disc-P-768x576.png",
     "description": "masih belum ada",
     "price": 5000,
-    "StationId": 3
+    "StationId": 3,
+    "CategoryId": 4
   }
 ]
