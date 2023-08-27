@@ -103,38 +103,29 @@ const resolvers = {
             try {
                 const { user, error } = await context
                 if (!user) { throw new AuthenticationError(error.message); }
-                const data = await Station.findAll()
+                const data = await Station.findAll({ include: { model: Bicycles } })
                 const stationQrcode = await Promise.all(data.map(async e => {
-                    const token = jwt.sign({id: e.id}, JWT_KEY)
+                    const token = jwt.sign({ id: e.id }, JWT_KEY)
+                    const bicycle = e.Bicycles
+                    const bicycleQrcode = await Promise.all(bicycle.map(async e => {
+                        const bicycleToken = jwt.sign({ id: e.id, status: e.status }, JWT_KEY)
+                        try{
+                            const bicyleQrcode = await QRCode.toDataURL(bicycleToken)
+                            return {qrCode: bicyleQrcode, name: e.name}
+                        }catch(err){
+                            console.log(err);
+                            throw err
+                        }
+                    }))
                     try {
                         const qrCodeString = await QRCode.toDataURL(token)
-                        return { qrCode: qrCodeString, name: e.name }
+                        return { qrCode: qrCodeString, name: e.name, bicycleQrcode }
                     } catch (err) {
                         throw err;
                     }
                 }))
                 return stationQrcode
             } catch (err) {
-                console.log(err);
-                throw err
-            }
-        },
-        getBicycleQrCode: async (_,__,context) => {
-            try{
-                const { user, error } = await context
-                if (!user) { throw new AuthenticationError(error.message); }
-                const data = await Bicycles.findAll()
-               const bicycleQrcode = await Promise.all(data.map(async e => {
-                const token = jwt.sign({id: e.id}, JWT_KEY)
-                try {
-                    const qrCodeString = await QRCode.toDataURL(token)
-                    return {qrCode: qrCodeString, name: e.name}
-                }catch(err){
-                    throw err
-                }
-               }))
-               return bicycleQrcode
-            }catch(err){
                 console.log(err);
                 throw err
             }
@@ -297,6 +288,7 @@ const resolvers = {
                 return midtransToken
             } catch (err) {
                 console.log(err);
+                throw err
             }
         },
         topUpBalance: async (_, args, context) => {

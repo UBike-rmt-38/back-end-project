@@ -62,6 +62,7 @@ type MidtranToken {
 type stationQrcode {
     qrCode: String
     name: String
+    bicycleQrcode: [bicycleQrcode]
 }
 
 type bicycleQrcode {
@@ -79,7 +80,6 @@ type Query {
     getTransactions: [Transactions]
     userHistoryTransaction(UserId: Int): [Transactions]
     getStationQrCode: [stationQrcode]
-    getBicycleQrCode: [bicycleQrcode]
 }
 
 type Mutation {
