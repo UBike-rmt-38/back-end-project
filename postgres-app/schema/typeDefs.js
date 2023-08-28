@@ -89,7 +89,7 @@ type Query {
     getCategoriesById(categoryId: Int): Categories
     getStationsById(stationId: Int): Stations
     getTransactions: [Transactions]
-    userHistoryTransaction(UserId: Int): [Transactions]
+    userHistoryTransaction: [Transactions]
     getStationQrCode: [stationQrcode]
     getRentalReport: [Rentals]
 }
