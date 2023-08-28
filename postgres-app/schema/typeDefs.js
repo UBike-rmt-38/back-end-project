@@ -178,6 +178,11 @@ type Mutation {
     ): MidtranToken
 
     topUpBalance(amount: Int!): String
+
+    chanePassword(
+        oldPassword: String!
+        newPassword: String!
+    ): String
 }
 `
 module.exports = typeDefs
