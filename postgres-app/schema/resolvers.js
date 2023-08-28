@@ -162,11 +162,15 @@ type Mutation {
     topUpBalance(amount: Int!): String
 }
 `
+const QRCode = require('qrcode');
+const jwt = require('jsonwebtoken');
+const JWT_KEY = process.env.JWT_SECRET
 
 const resolvers = {
     Query: {
         getStations: async (_, __, context) => {
             const { user, error } = await context
+            console.log(context, 'cek context');
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await Station.findAll({ include: { model: Bicycles } })
             return data
@@ -190,6 +194,18 @@ const resolvers = {
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await User.findAll()
             return data
+        },
+        getUsersDetails: async (_, __, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const data = await User.findByPk(user.id, { include: [{ model: Transaction }, { model: Rental }] })
+                console.log(data.Transactions);
+                return data
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
         },
         getRentals: async (_, __, context) => {
             const { user, error } = await context
@@ -217,17 +233,58 @@ const resolvers = {
             if (!user) { throw new AuthenticationError(error.message); }
             const data = await Transaction.findAll({
                 include: [
-                  {
-                    model: User,
-                    attributes: {
-                      exclude: ['password']
+                    {
+                        model: User,
+                        attributes: {
+                            exclude: ['password']
+                        },
                     },
-                  },
                 ],
-              })
+            })
             return data
         },
-        userHistoryTransaction: async (_,args,context) => {
+        userHistoryTransaction: async (_, args, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const { UserId } = args
+                const data = await Transaction.findAll({
+                    where: { UserId }, include: [
+                        {
+                            model: User,
+                            attributes: {
+                                exclude: ['password']
+                            },
+                        },
+                    ],
+                });
+                return data
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        getStationQrCode: async (_, __, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+                const data = await Station.findAll()
+                const stationQrcode = await Promise.all(data.map(async e => {
+                    const token = jwt.sign({id: e.id}, JWT_KEY)
+                    try {
+                        const qrCodeString = await QRCode.toDataURL(token)
+                        return { qrCode: qrCodeString, name: e.name }
+                    } catch (err) {
+                        throw err;
+                    }
+                }))
+                return stationQrcode
+            } catch (err) {
+                console.log(err);
+                throw err
+            }
+        },
+        getBicycleQrCode: async (_,__,context) => {
             try{
                 const { user, error } = await context
                 if (!user) { throw new AuthenticationError(error.message); }
@@ -468,4 +525,4 @@ const resolvers = {
     }
 }
 
-module.exports = [typeDefs, resolvers];
+module.exports = resolvers
