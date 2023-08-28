@@ -480,10 +480,13 @@ const resolvers = {
             const t = await sequelize.transaction()
             try {
                 const { user, error } = await context
-                const { BicycleId } = args
                 if (!user) { throw new AuthenticationError(error.message); }
-                await Rental.create({ UserId: user.id, BicycleId }, { transaction: t })
-                await Bicycles.update({ status: false }, { where: { id: BicycleId } }, { transaction: t })
+                const { bicycleToken } = args
+                const payload = jwt.verify(bicycleToken, JWT_KEY)
+                const verifyBicycle = await Bicycles.findByPk(payload.id)
+                if(verifyBicycle.status === false) return 'Bicycle unavailable'
+                await Rental.create({ UserId: user.id, BicycleId: payload.id }, { transaction: t })
+                await Bicycles.update({ status: false }, { where: { id: payload.id } }, { transaction: t })
                 await t.commit()
 
                 return 'Rent start'
