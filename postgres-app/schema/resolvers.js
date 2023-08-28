@@ -164,6 +164,7 @@ type Mutation {
 `
 const QRCode = require('qrcode');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const JWT_KEY = process.env.JWT_SECRET
 
 const resolvers = {
@@ -261,9 +262,8 @@ const resolvers = {
             try {
                 const { user, error } = await context
                 if (!user) { throw new AuthenticationError(error.message); }
-                const { UserId } = args
                 const data = await Transaction.findAll({
-                    where: { UserId }, include: [
+                    where: { UserId: user.id }, include: [
                         {
                             model: User,
                             attributes: {
@@ -288,10 +288,10 @@ const resolvers = {
                     const bicycle = e.Bicycles
                     const bicycleQrcode = await Promise.all(bicycle.map(async e => {
                         const bicycleToken = jwt.sign({ id: e.id, status: e.status }, JWT_KEY)
-                        try{
+                        try {
                             const bicyleQrcode = await QRCode.toDataURL(bicycleToken)
-                            return {qrCode: bicyleQrcode, name: e.name}
-                        }catch(err){
+                            return { qrCode: bicyleQrcode, name: e.name }
+                        } catch (err) {
                             console.log(err);
                             throw err
                         }
@@ -306,6 +306,27 @@ const resolvers = {
                 return stationQrcode
             } catch (err) {
                 console.log(err);
+                throw err
+            }
+        },
+        getRentalReport: async (_, __, context) => {
+            try {
+                const { user, error } = await context
+                if (!user) { throw new AuthenticationError(error.message); }
+
+                const today = new Date();
+                const sevenDaysAgo = new Date(today);
+                sevenDaysAgo.setDate(today.getDate() - 7);
+
+                const data = await Rental.findAll({
+                    where: {
+                      createdAt: {
+                        [Op.between]: [sevenDaysAgo, today],
+                      },
+                    },
+                  })
+                  return data
+            } catch (err) {
                 throw err
             }
         }
