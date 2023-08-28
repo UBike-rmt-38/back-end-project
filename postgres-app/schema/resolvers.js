@@ -434,7 +434,7 @@ const resolvers = {
         const { bicycleToken } = args;
         const payload = jwt.verify(bicycleToken, JWT_KEY);
         const verifyBicycle = await Bicycles.findByPk(payload.id);
-        if (verifyBicycle.status === false) return "Bicycle unavailable";
+        if (verifyBicycle.status === false) throw new AuthenticationError('Bicycle unavailable')
         await Rental.create(
           { UserId: user.id, BicycleId: payload.id },
           { transaction: t }
@@ -569,6 +569,25 @@ const resolvers = {
         throw err;
       }
     },
+    chanePassword: async (_, args, context) => {
+      try {
+        const { oldPassword, newPassword } = args;
+        const { user, error } = context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const getUser = await User.findByPk(user.id)
+        const verifyPassword = bcrypt.compareSync(oldPassword, getUser.password)
+        if (!verifyPassword) throw new AuthenticationError('Invalid old password')
+
+        const salt = bcrypt.genSaltSync(10)
+        const hashPassword = bcrypt.hashSync(newPassword, salt)
+        await User.update({ password: hashPassword }, { where: { id: user.id } })
+        return 'Password has been changed'
+      } catch (err) {
+        throw err
+      }
+    }
   },
 };
 
