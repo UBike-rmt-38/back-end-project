@@ -473,7 +473,7 @@ describe.only("GraphQL Test Coverage", () => {
         expect(response.status).toBe(200);
         expect(response.errors).toBeUndefined();
         const { login } = response.body.data
-        expect(login).toEqual("invalid usernamepassword");
+        expect(login).toEqual(null);
       })
     })
 

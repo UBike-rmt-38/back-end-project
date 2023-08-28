@@ -98,8 +98,8 @@ type Mutation {
     addStation(
         name: String!
         address: String!
-        latitude: String!
-        longitude: String!
+        latitude: Float!
+        longitude: Float!
     ): String
     
     editStation(
