@@ -127,9 +127,13 @@ const getStationsGeneral = {
         description
         price
         StationId
-        CategoryId
         status
+        CategoryId
+        updatedAt
+        createdAt
       }
+      createdAt
+      updatedAt
     }
   }`
 }
@@ -280,6 +284,19 @@ const doneRentals = {
   }`
 }
 
+const getRentalsGeneral = {
+  query: `query GetRentals {
+    getRentals {
+      id
+      status
+      travelledDistance
+      totalPrice
+      UserId
+      BicycleId
+      transaction
+    }
+  }`
+}
 
 // < ----- Payment Endpoints ----- >
 const generateMidTokens = {
@@ -294,6 +311,42 @@ const generateMidTokens = {
 const topUpBalances = {
   query: `mutation TopUpBalance($amount: Int!) {
     topUpBalance(amount: $amount)
+  }`
+}
+
+const getTransactionsGeneral = {
+  query: `query GetTransactions {
+    getTransactions {
+      id
+      action
+      amount
+      UserId
+      User {
+        id
+        username
+        role
+        email
+      }
+    }
+  }`
+}
+
+const getHistoryTransactionsGeneral = {
+  query: `query UserHistoryTransaction($userId: Int) {
+    userHistoryTransaction(UserId: $userId) {
+      id
+      action
+      amount
+      UserId
+      User {
+        id
+        username
+        role
+        email
+        password
+        balance
+      }
+    }
   }`
 }
 
@@ -1138,6 +1191,8 @@ describe.only("GraphQL Test Coverage", () => {
           expect(Number.isFinite(getStations[0].latitude)).toBe(true);
           expect(typeof getStations[0].longitude).toBe('number');
           expect(Number.isFinite(getStations[0].longitude)).toBe(true);
+          expect(getStations[0]).toHaveProperty("createdAt", expect.any(String));
+          expect(getStations[0]).toHaveProperty("updatedAt", expect.any(String));
 
           if (getStations[0].Bicycles.length > 0) {
             const bicycles = getStations[0].Bicycles[0]
@@ -1382,6 +1437,104 @@ describe.only("GraphQL Test Coverage", () => {
           expect(getBicycles[0]).toHaveProperty("StationId", expect.any(Number));
           expect(getBicycles[0]).toHaveProperty("CategoryId", expect.any(Number));
           expect(getBicycles[0]).toHaveProperty("status", expect.any(Boolean));
+        }
+      });
+    });
+
+    describe('+ getRentals', () => {
+      test('success return object and return 200', async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getRentalsGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        expect(response.errors).toBeUndefined();
+
+        const { getRentals } = response.body.data
+
+        if (getRentals.length > 0) {
+          expect(getRentals[0]).toHaveProperty("id", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("status", expect.any(Boolean))
+          expect(getRentals[0]).toHaveProperty("travelledDistance", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("totalPrice", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("UserId", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("BicycleId", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("transaction", expect.any(String))
+        }
+      })
+    })
+
+    describe("+ getTransactions", () => {
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getTransactionsGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getTransactions } = response.body.data
+
+        if (getTransactions.length > 0) {
+          expect(getTransactions[0]).toHaveProperty("id", expect.any(Number));
+          expect(getTransactions[0]).toHaveProperty("action", expect.any(String));
+          expect(getTransactions[0]).toHaveProperty("amount", expect.any(Number));
+          expect(getTransactions[0]).toHaveProperty("UserId", expect.any(Number));
+
+          if (getTransactions[0].User.length > 0) {
+            expect(getTransactions[0].User[0]).toHaveProperty("id", expect.any(Number));
+            expect(getTransactions[0].User[0]).toHaveProperty("username", expect.any(String));
+            expect(getTransactions[0].User[0]).toHaveProperty("role", expect.any(String));
+            expect(getTransactions[0].User[0]).toHaveProperty("email", expect.any(String));
+            expect(getTransactions[0].User[0]).toHaveProperty("balance", expect.any(Number));
+          }
+        }
+      });
+    });
+
+    describe("+ userHistoryTransaction", () => {
+      test("success return object and return 200", async () => {
+        const bodyData = {
+          userId: 1
+        }
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getHistoryTransactionsGeneral.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { userHistoryTransaction } = response.body.data
+
+        if (userHistoryTransaction.length > 0) {
+          expect(userHistoryTransaction[0]).toHaveProperty("id", expect.any(Number));
+          expect(userHistoryTransaction[0]).toHaveProperty("action", expect.any(String));
+          expect(userHistoryTransaction[0]).toHaveProperty("amount", expect.any(Number));
+          expect(userHistoryTransaction[0]).toHaveProperty("UserId", expect.any(Number));
+
+          if (userHistoryTransaction[0].User.length > 0) {
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("id", expect.any(Number));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("username", expect.any(String));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("role", expect.any(String));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("email", expect.any(String));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("balance", expect.any(Number));
+          }
         }
       });
     });
