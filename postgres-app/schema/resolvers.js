@@ -228,8 +228,8 @@ const resolvers = {
             try {
                 const { user, error } = await context
                 if (!user || user.role === 'User') { throw new AuthenticationError('Authorization token invalid'); }
-                const { name, feature, imageURL, description, price, StationId } = args
-                await Bicycles.create({ name, feature, imageURL, description, price, StationId })
+                const { name, feature, imageURL, description, price, StationId, CategoryId } = args
+                await Bicycles.create({ name, feature, imageURL, description, price, StationId, CategoryId })
                 return 'Bicycle created'
             } catch (err) {
                 console.log(err);

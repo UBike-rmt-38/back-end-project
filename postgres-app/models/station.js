@@ -35,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
         notEmpty: { msg: "please input latitude" }
       }
     },
-    longtitude: {
+    longitude: {
       type: DataTypes.FLOAT,
       validate: {
         notEmpty: { msg: "please input longtitude" }

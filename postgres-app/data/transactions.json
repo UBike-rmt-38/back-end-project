@@ -8,5 +8,10 @@
     "action": "Payment",
     "amount": 14000,
     "UserId": 1
+  },
+  {
+    "action": "Payment",
+    "amount": 14000,
+    "UserId": 2
   }
 ]
