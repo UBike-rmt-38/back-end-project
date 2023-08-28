@@ -434,7 +434,7 @@ const resolvers = {
         const { bicycleToken } = args;
         const payload = jwt.verify(bicycleToken, JWT_KEY);
         const verifyBicycle = await Bicycles.findByPk(payload.id);
-        if (verifyBicycle.status === false) return "Bicycle unavailable";
+        if (verifyBicycle.status === false) throw "Bicycle unavailable";
         await Rental.create(
           { UserId: user.id, BicycleId: payload.id },
           { transaction: t }
