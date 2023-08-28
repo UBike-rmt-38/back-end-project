@@ -1,0 +1,17 @@
+const { ApolloServer } = require("@apollo/server");
+const { startStandaloneServer } = require("../app");
+
+const typeDefs = require("../schema/typeDefs");
+const resolvers = require("../schema/resolvers");
+const context = require("../middlewares/auth");
+
+const server = new ApolloServer({
+  typeDefs: typeDefs,
+  resolvers: resolvers,
+  introspection: true,
+});
+
+startStandaloneServer(server, {
+  listen: { port: process.env.PORT || 4000 },
+  context: context,
+}).then(({ url }) => console.log(`🚀 Server ready at ${url}`));

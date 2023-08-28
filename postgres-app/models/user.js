@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
   User.init({
     username: {
       type: DataTypes.STRING,
+      unique: { msg: "username already taken" },
       validate: {
         notEmpty: { msg: "please input username" }
       }

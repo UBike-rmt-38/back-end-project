@@ -10,6 +10,15 @@ type Stations {
     upatedAt: String
 }
 
+type Categories {
+    id: Int
+    name: String
+    description: String
+    Bicycles: [Bicycles]
+    createdAt: String
+    upatedAt: String
+}
+
 type Bicycles {
     id: Int
     name: String
@@ -73,9 +82,11 @@ type bicycleQrcode {
 type Query {
     getStations: [Stations]
     getBicycles: [Bicycles]
+    getCategories: [Categories]
     getUsers: [Users]
     getUsersDetails: Users
     getRentals: [Rentals]
+    getCategoriesById(categoryId: Int): Categories
     getStationsById(stationId: Int): Stations
     getTransactions: [Transactions]
     userHistoryTransaction(UserId: Int): [Transactions]
@@ -100,6 +111,19 @@ type Mutation {
     ): String
 
     deleteStation(stationId: Int!): String
+
+    addCategory(
+        name: String!
+        description: String!
+    ): String
+
+    editCategory(
+        name: String!
+        description: String!
+        categoryId: Int!
+    ): String
+
+    deleteCategory(categoryId: Int!): String
 
     addBicycle(
         name: String!
@@ -130,7 +154,7 @@ type Mutation {
     ): String
 
     createRental(
-        BicycleId: Int!
+        bicycleToken: String!
     ): String
 
     doneRental(

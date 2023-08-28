@@ -6,6 +6,7 @@
     "description": "masih belum ada",
     "price": 7000,
     "StationId": 1,
+    "CategoryId": 1,
     "status": true
   },
   {
@@ -15,6 +16,7 @@
     "description": "masih belum ada",
     "price": 7500,
     "StationId": 1,
+    "CategoryId": 2,
     "status": true
   },
   {
@@ -24,6 +26,7 @@
     "description": "masih belum ada",
     "price": 7000,
     "StationId": 2,
+    "CategoryId": 3,
     "status": true
   },
   {
@@ -33,6 +36,7 @@
     "description": "masih belum ada",
     "price": 5000,
     "StationId": 2,
+    "CategoryId": 4,
     "status": true
   },
   {
@@ -42,6 +46,7 @@
     "description": "masih belum ada",
     "price": 7000,
     "StationId": 3,
+    "CategoryId": 4,
     "status": true
   },
   {
@@ -51,6 +56,7 @@
     "description": "masih belum ada",
     "price": 5000,
     "StationId": 3,
+    "CategoryId": 4,
     "status": true
   }
 ]
