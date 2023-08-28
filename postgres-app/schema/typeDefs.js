@@ -3,11 +3,11 @@ type Stations {
     id: Int 
     name: String
     address: String
-    latitude: String
-    longitude: String
+    latitude: Float
+    longitude: Float
     Bicycles: [Bicycles]
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Categories {
@@ -16,7 +16,7 @@ type Categories {
     description: String
     Bicycles: [Bicycles]
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Bicycles {
@@ -27,9 +27,10 @@ type Bicycles {
     description: String
     price: Int
     StationId: Int
+    CategoryId: Int
     status: Boolean
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Users {
@@ -52,7 +53,7 @@ type Rentals {
     BicycleId: Int 
     transaction: String
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Transactions {
@@ -98,16 +99,16 @@ type Mutation {
     addStation(
         name: String!
         address: String!
-        latitude: String!
-        longitude: String!
+        latitude: Float!
+        longitude: Float!
     ): String
     
     editStation(
         stationId: Int!
         name: String!
         address: String!
-        latitude: String!
-        longitude: String!
+        latitude: Float!
+        longitude: Float!
     ): String
 
     deleteStation(stationId: Int!): String
@@ -132,6 +133,7 @@ type Mutation {
         description: String!
         price: Int!
        StationId: Int!
+       CategoryId: Int!
     ): String
 
     editBicycle(
@@ -142,6 +144,7 @@ type Mutation {
         description: String!
         price: Int!
        StationId: Int!
+       CategoryId: Int!
     ): String
 
     deleteBicycle(bicycleId: Int!): String
