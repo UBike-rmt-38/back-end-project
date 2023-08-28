@@ -91,6 +91,7 @@ type Query {
     getTransactions: [Transactions]
     userHistoryTransaction(UserId: Int): [Transactions]
     getStationQrCode: [stationQrcode]
+    getRentalReport: [Rentals]
 }
 
 type Mutation {
