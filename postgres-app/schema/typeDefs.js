@@ -154,7 +154,7 @@ type Mutation {
     ): String
 
     createRental(
-        BicycleId: Int!
+        bicycleToken: String!
     ): String
 
     doneRental(
