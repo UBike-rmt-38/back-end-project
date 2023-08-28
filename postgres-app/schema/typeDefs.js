@@ -106,8 +106,8 @@ type Mutation {
         stationId: Int!
         name: String!
         address: String!
-        latitude: String!
-        longitude: String!
+        latitude: Float!
+        longitude: Float!
     ): String
 
     deleteStation(stationId: Int!): String
@@ -132,6 +132,7 @@ type Mutation {
         description: String!
         price: Int!
        StationId: Int!
+       CategoryId: Int!
     ): String
 
     editBicycle(
@@ -142,6 +143,7 @@ type Mutation {
         description: String!
         price: Int!
        StationId: Int!
+       CategoryId: Int!
     ): String
 
     deleteBicycle(bicycleId: Int!): String

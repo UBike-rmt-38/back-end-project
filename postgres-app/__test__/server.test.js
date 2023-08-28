@@ -116,8 +116,8 @@ const getStationsGeneral = {
     getStations {
       id
       name
-      address
       latitude
+      address
       longitude
       Bicycles {
         id
@@ -128,12 +128,7 @@ const getStationsGeneral = {
         price
         StationId
         status
-        CategoryId
-        updatedAt
-        createdAt
       }
-      createdAt
-      updatedAt
     }
   }`
 }
@@ -182,7 +177,7 @@ const addCategories = {
 }
 
 const editCategories = {
-  query: `mutation AddCategory($name: String!, $description: String!, $categoryId: Int!) {
+  query: `mutation EditCategory($name: String!, $description: String!, $categoryId: Int!) {
     editCategory(name: $name, description: $description, categoryId: $categoryId)
   }`
 }
@@ -273,8 +268,8 @@ const getBicycleGeneral = {
 
 // < ----- Rental Endpoints ----- >
 const createRentals = {
-  query: `mutation CreateRental($bicycleId: Int!) {
-    createRental(BicycleId: $bicycleId)
+  query: `mutation CreateRental($bicycleToken: String!) {
+    createRental(bicycleToken: $bicycleToken)
   }`
 }
 
@@ -536,9 +531,9 @@ describe.only("GraphQL Test Coverage", () => {
         const bodyData = {
           name: "testing",
           address: "test",
-          latitude: 0.1222222,
+          latitude: -9.12222,
           longitude: 8.9999,
-          stationId: 3
+          stationId: 1
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
@@ -676,9 +671,9 @@ describe.only("GraphQL Test Coverage", () => {
     describe('+ editCategory', () => {
       test('success add and return 200', async () => {
         const bodyData = {
-          "name": "testing",
-          "description": "test",
-          "categoryId": 4
+          name: "testing",
+          description: "test",
+          categoryId: 4
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
@@ -712,7 +707,6 @@ describe.only("GraphQL Test Coverage", () => {
             variables: bodyData,
           })
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
-
 
         expect(response.status).toBe(200);
         expect(response.errors).toBeUndefined();
@@ -917,7 +911,7 @@ describe.only("GraphQL Test Coverage", () => {
     describe('+ createRental', () => {
       test('success create and return 200', async () => {
         const bodyData = {
-          bicycleId: 1
+          bicycleToken: jwt.sign({ id: 1 }, process.env.JWT_SECRET)
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
@@ -972,7 +966,7 @@ describe.only("GraphQL Test Coverage", () => {
             query: doneRentals.query,
             variables: bodyData
           })
-          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET))
 
         const { doneRental } = response.body.data
         console.log(response.body);
