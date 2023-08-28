@@ -7,6 +7,7 @@ const user = require('../data/users.json')
 const station = require('../data/station.json')
 const bicycles = require('../data/bicycles.json')
 const rentals = require('../data/rentals.json')
+const categories = require('../data/categories.json')
 
 user.forEach((e) => {
   e.createdAt = new Date()
@@ -25,6 +26,11 @@ bicycles.forEach((e) => {
 })
 
 rentals.forEach((e) => {
+  e.createdAt = new Date()
+  e.updatedAt = new Date()
+})
+
+categories.forEach((e) => {
   e.createdAt = new Date()
   e.updatedAt = new Date()
 })
@@ -139,6 +145,7 @@ let server, url;
 
 beforeAll(async () => {
   await sequelize.queryInterface.bulkInsert("Users", user, {})
+  await sequelize.queryInterface.bulkInsert("Categories", categories, {})
   await sequelize.queryInterface.bulkInsert("Stations", station, {})
   await sequelize.queryInterface.bulkInsert("Bicycles", bicycles, {})
   await sequelize.queryInterface.bulkInsert("Rentals", rentals, {})
@@ -174,7 +181,7 @@ afterAll(async () => {
   // await sequelize.close()
 });
 
-describe("GraphQL Test Coverage", () => {
+describe.only("GraphQL Test Coverage", () => {
 
   // < ----- Mutation Test ----- > 
   describe('Mutation Test Endpoints', () => {
