@@ -53,7 +53,7 @@ const getStations = {
       name
       address
       latitude
-      longtitude
+      longitude
     }
   }`
 }
@@ -143,7 +143,7 @@ beforeAll(async () => {
   await sequelize.queryInterface.bulkInsert("Bicycles", bicycles, {})
   await sequelize.queryInterface.bulkInsert("Rentals", rentals, {})
   const { server: apolloServer, url: serverUrl } = await createApolloServer({
-    port: Math.floor(Math.random() * 9999),
+    port: 0,
   });
   server = apolloServer;
   url = serverUrl;
