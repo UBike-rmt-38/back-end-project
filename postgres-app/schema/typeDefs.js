@@ -27,6 +27,7 @@ type Bicycles {
     description: String
     price: Int
     StationId: Int
+    CategoryId: Int
     status: Boolean
     createdAt: String
     updatedAt: String
