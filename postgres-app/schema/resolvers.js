@@ -394,6 +394,7 @@ const resolvers = {
           { where: { id: stationId } }
         );
         await redis.del('app:stations');
+        await redis.del('app:stationbyid');
 
         return `station with id ${stationId} has been updated`;
       } catch (err) {
@@ -512,6 +513,7 @@ const resolvers = {
           { where: { id: bicycleId } }
         );
         await redis.del('app:bicycles');
+        await redis.del('app:bicyclebyid')
 
         return `Bicycle with id ${bicycleId} has been updated`;
       } catch (err) {
