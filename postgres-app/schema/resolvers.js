@@ -75,13 +75,13 @@ const resolvers = {
         throw err
       }
     },
-    getBicycleById: async (_,args,context) => {
-      try{
+    getBicycleById: async (_, args, context) => {
+      try {
         const { user, error } = await context;
         if (!user) {
           throw new AuthenticationError(error.message);
         }
-        const {id} = args
+        const { id } = args
         const dataCache = await redis.get('app:bicyclebyid')
         if (dataCache) {
           const data = JSON.parse(dataCache)
@@ -95,9 +95,9 @@ const resolvers = {
           include: [{ model: Station }, { model: Category }],
         });
         await redis.set('app:bicyclebyid', JSON.stringify(data))
-        
+
         return data
-      }catch(err){
+      } catch (err) {
         throw err
       }
     },

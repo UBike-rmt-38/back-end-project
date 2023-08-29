@@ -7,7 +7,7 @@ type Stations {
     longitude: String
     Bicycles: [Bicycles]
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Categories {
@@ -16,7 +16,7 @@ type Categories {
     description: String
     Bicycles: [Bicycles]
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Bicycles {
@@ -32,7 +32,7 @@ type Bicycles {
     Station: Stations
     Category: Categories
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Users {
@@ -55,7 +55,7 @@ type Rentals {
     BicycleId: Int 
     transaction: String
     createdAt: String
-    upatedAt: String
+    updatedAt: String
 }
 
 type Transactions {
