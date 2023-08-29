@@ -85,7 +85,7 @@ type bicycleQrcode {
 type Query {
     getStations: [Stations]
     getBicycles: [Bicycles]
-    getBicycleById(id: Int): Bicycles
+    getBicycleById(bicycleId: Int): Bicycles
     getCategories: [Categories]
     getUsers: [Users]
     getUsersDetails: Users
