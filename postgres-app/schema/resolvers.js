@@ -469,7 +469,7 @@ const resolvers = {
         if (!user || user.role === "User") {
           throw new AuthenticationError("Authorization token invalid");
         }
-        const { name, feature, imageURL, description, price, StationId } = args;
+        const { name, feature, imageURL, description, price, StationId, categoryId } = args;
         await Bicycles.create({
           name,
           feature,
@@ -477,6 +477,7 @@ const resolvers = {
           description,
           price,
           StationId,
+          categoryId
         });
         await redis.del('app:bicycles');
 
@@ -500,9 +501,10 @@ const resolvers = {
           price,
           StationId,
           bicycleId,
+          categoryId
         } = args;
         await Bicycles.update(
-          { name, feature, imageURL, description, price, StationId },
+          { name, feature, imageURL, description, price, StationId, categoryId },
           { where: { id: bicycleId } }
         );
         await redis.del('app:bicycles');
@@ -704,7 +706,7 @@ const resolvers = {
         throw err;
       }
     },
-    chanePassword: async (_, args, context) => {
+    changePassword: async (_, args, context) => {
       try {
         const { oldPassword, newPassword } = args;
         const { user, error } = context;

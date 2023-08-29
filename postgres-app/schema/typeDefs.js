@@ -3,8 +3,8 @@ type Stations {
     id: Int 
     name: String
     address: String
-    latitude: String
-    longitude: String
+    latitude: Int
+    longitude: Int
     Bicycles: [Bicycles]
     createdAt: String
     updatedAt: String
@@ -110,8 +110,8 @@ type Mutation {
         stationId: Int!
         name: String!
         address: String!
-        latitude: String!
-        longitude: String!
+        latitude: Int!
+        longitude: Int!
     ): String
 
     deleteStation(stationId: Int!): String
@@ -136,6 +136,7 @@ type Mutation {
         description: String!
         price: Int!
        StationId: Int!
+       CategoryId: Int!
     ): String
 
     editBicycle(
@@ -146,6 +147,7 @@ type Mutation {
         description: String!
         price: Int!
        StationId: Int!
+       CategoryId: Int!
     ): String
 
     deleteBicycle(bicycleId: Int!): String
@@ -180,7 +182,7 @@ type Mutation {
 
     topUpBalance(amount: Int!): String
 
-    chanePassword(
+    changePassword(
         oldPassword: String!
         newPassword: String!
     ): String
