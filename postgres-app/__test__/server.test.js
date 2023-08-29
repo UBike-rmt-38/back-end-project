@@ -3,6 +3,7 @@ const { sequelize } = require('../models')
 const jwt = require('jsonwebtoken')
 const request = require("supertest");
 const { hashSync } = require('bcrypt')
+const resolvers = require('../schema/resolvers')
 
 const { User } = require('../models')
 const user = require('../data/users.json')
@@ -1125,6 +1126,30 @@ describe("GraphQL Test Coverage", () => {
         }
       })
 
+
+      test('not authorized and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: null,
+          categoryId: 4
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: editCategories.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
       test('failed edit and return 200', async () => {
         const bodyData = {
           name: "test",
@@ -2110,7 +2135,7 @@ describe("GraphQL Test Coverage", () => {
     });
 
     describe("+ getCategoriesById", () => {
-      test("success return object and return 200", async () => {
+      it("success return object and return 200", async () => {
         const bodyData = {
           categoryId: 1
         }

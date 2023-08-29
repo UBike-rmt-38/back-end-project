@@ -100,24 +100,6 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { categoryId } = args;
-        // if (!categoryId) throw new AuthenticationError;
-        const data = await Category.findByPk(categoryId, {
-          include: {
-            model: Bicycles,
-          },
-        });
-        return data;
-      } catch (err) {
-        throw err;
-      }
-    },
-    getCategoriesById: async (_, args, context) => {
-      try {
-        const { user, error } = await context;
-        if (!user) {
-          throw new AuthenticationError(error.message);
-        }
-        const { categoryId } = args;
         const data = await Category.findByPk(categoryId, {
           include: {
             model: Bicycles,
@@ -235,19 +217,6 @@ const resolvers = {
         return "Station created";
       } catch (err) {
         throw err;
-      }
-    },
-    addCategory: async (_, args, context) => {
-      try {
-        const { user, error } = await context;
-        if (!user || user.role === "User") {
-          throw new AuthenticationError("Authorization token invalid");
-        }
-        const { name, description } = args;
-        await Category.create({ name, description });
-        return "Category created";
-      } catch (error) {
-        throw error;
       }
     },
     editStation: async (_, args, context) => {
@@ -375,20 +344,6 @@ const resolvers = {
         }
         await Bicycles.destroy({ where: { id: bicycleId } });
         return `bicycle with id ${bicycleId} has been successfully deleted.`;
-      } catch (err) {
-        throw err;
-      }
-    },
-
-    deleteCategory: async (_, args, context) => {
-      try {
-        const { user, error } = await context;
-        const { categoryId } = args;
-        if (!user || user.role === "User") {
-          throw new AuthenticationError("Authorization token invalid");
-        }
-        await Category.destroy({ where: { id: categoryId } });
-        return `Category with id ${categoryId} has been successfully deleted.`;
       } catch (err) {
         throw err;
       }
