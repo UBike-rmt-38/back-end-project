@@ -100,6 +100,7 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { categoryId } = args;
+        // if (!categoryId) throw new AuthenticationError;
         const data = await Category.findByPk(categoryId, {
           include: {
             model: Bicycles,
@@ -107,7 +108,6 @@ const resolvers = {
         });
         return data;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -165,7 +165,6 @@ const resolvers = {
         });
         return data;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -186,26 +185,17 @@ const resolvers = {
                   { id: e.id, status: e.status },
                   JWT_KEY
                 );
-                try {
-                  const bicyleQrcode = await QRCode.toDataURL(bicycleToken);
-                  return { qrCode: bicyleQrcode, name: e.name };
-                } catch (err) {
-                  console.log(err);
-                  throw err;
-                }
+                const bicyleQrcode = await QRCode.toDataURL(bicycleToken);
+                return { qrCode: bicyleQrcode, name: e.name };
+
               })
             );
-            try {
-              const qrCodeString = await QRCode.toDataURL(token);
-              return { qrCode: qrCodeString, name: e.name, bicycleQrcode };
-            } catch (err) {
-              throw err;
-            }
+            const qrCodeString = await QRCode.toDataURL(token);
+            return { qrCode: qrCodeString, name: e.name, bicycleQrcode };
           })
         );
         return stationQrcode;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -256,7 +246,7 @@ const resolvers = {
         const { name, description } = args;
         await Category.create({ name, description });
         return "Category created";
-      } catch (err) {
+      } catch (error) {
         throw error;
       }
     },
@@ -287,7 +277,6 @@ const resolvers = {
         await Station.destroy({ where: { id: stationId } });
         return `station with id ${stationId} has been deleted`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -317,7 +306,6 @@ const resolvers = {
         );
         return `Category with id ${categoryId} has been updated`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -331,7 +319,6 @@ const resolvers = {
         await Category.destroy({ where: { id: categoryId } });
         return `Category with id ${categoryId} has been successfully deleted.`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -352,7 +339,6 @@ const resolvers = {
         });
         return "Bicycle created";
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -377,7 +363,6 @@ const resolvers = {
         );
         return `Bicycle with id ${bicycleId} has been updated`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -391,7 +376,6 @@ const resolvers = {
         await Bicycles.destroy({ where: { id: bicycleId } });
         return `bicycle with id ${bicycleId} has been successfully deleted.`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -406,7 +390,6 @@ const resolvers = {
         await Category.destroy({ where: { id: categoryId } });
         return `Category with id ${categoryId} has been successfully deleted.`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -508,7 +491,6 @@ const resolvers = {
         return "Rent done";
       } catch (err) {
         t.rollback();
-        console.log(err);
         throw err;
       }
     },
@@ -569,7 +551,7 @@ const resolvers = {
         throw err;
       }
     },
-    chanePassword: async (_, args, context) => {
+    changePassword: async (_, args, context) => {
       try {
         const { oldPassword, newPassword } = args;
         const { user, error } = context;

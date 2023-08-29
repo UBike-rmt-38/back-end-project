@@ -179,7 +179,7 @@ type Mutation {
 
     topUpBalance(amount: Int!): String
 
-    chanePassword(
+    changePassword(
         oldPassword: String!
         newPassword: String!
     ): String
