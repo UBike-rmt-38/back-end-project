@@ -16,41 +16,113 @@ const QRCode = require("qrcode");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const JWT_KEY = process.env.JWT_SECRET;
+const redis = require('../config/ioredis')
 
 const resolvers = {
   Query: {
     getStations: async (_, __, context) => {
-      const { user, error } = await context;
-      console.log(context, "cek context");
-      if (!user) {
-        throw new AuthenticationError(error.message);
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:stations')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
+        const data = await Station.findAll({ include: { model: Bicycles } });
+        await redis.set('app:stations', JSON.stringify(data))
+        return data;
+      } catch (err) {
+        throw err
       }
-      const data = await Station.findAll({ include: { model: Bicycles } });
-      return data;
     },
     getCategories: async (_, __, context) => {
-      const { user, error } = await context;
-      if (!user) {
-        throw new AuthenticationError(error.message);
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:categories')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
+        const data = await Category.findAll({ include: { model: Bicycles } });
+        await redis.set('app:categories', JSON.stringify(data))
+        return data;
+      } catch (err) {
+        throw err
       }
-      const data = await Category.findAll({ include: { model: Bicycles } });
-      return data;
     },
     getBicycles: async (_, __, context) => {
-      const { user, error } = await context;
-      if (!user) {
-        throw new AuthenticationError(error.message);
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:bicycles')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
+        const data = await Bicycles.findAll();
+        await redis.set('app:bicycles', JSON.stringify(data))
+
+        return data;
+      } catch (err) {
+        throw err
       }
-      const data = await Bicycles.findAll();
-      return data;
+    },
+    getBicycleById: async (_, args, context) => {
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const { bicycleId } = args
+        const dataCache = await redis.get('app:bicyclebyid')
+        console.log(dataCache, 'data');
+
+        if (dataCache !== null) {
+          const data = JSON.parse(dataCache)
+          console.log(data, 'cek dalam if');
+          if (data.id === bicycleId) {
+            return data
+          } else {
+            await redis.del('app:bicyclebyid');
+          }
+        }
+        const data = await Bicycles.findByPk(bicycleId, {
+          include: [{ model: Station }, { model: Category }],
+        });
+        if (data) await redis.set('app:bicyclebyid', JSON.stringify(data))
+
+        return data
+      } catch (err) {
+        console.log(err);
+        throw err
+      }
     },
     getUsers: async (_, __, context) => {
-      const { user, error } = await context;
-      if (!user) {
-        throw new AuthenticationError(error.message);
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:users')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
+        const data = await User.findAll();
+        await redis.set('app:users', JSON.stringify(data))
+
+        return data;
+      } catch (err) {
+        throw err;
       }
-      const data = await User.findAll();
-      return data;
     },
     getUsersDetails: async (_, __, context) => {
       try {
@@ -58,23 +130,43 @@ const resolvers = {
         if (!user) {
           throw new AuthenticationError(error.message);
         }
+        const dataCache = await redis.get('app:userdetail')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          if (data.id === user.id) {
+            return data;
+          } else {
+            await redis.del('app:userdetail')
+          }
+        }
         const data = await User.findByPk(user.id, {
           include: [{ model: Transaction }, { model: Rental }],
         });
-        console.log(data.Transactions);
+        await redis.set('app:userdetail', JSON.stringify(data))
+
         return data;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
     getRentals: async (_, __, context) => {
-      const { user, error } = await context;
-      if (!user) {
-        throw new AuthenticationError(error.message);
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:rentals')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
+        const data = await Rental.findAll();
+        await redis.set('app:rentals', JSON.stringify(data))
+
+        return data;
+      } catch (err) {
+        throw err;
       }
-      const data = await Rental.findAll();
-      return data;
     },
     getStationsById: async (_, args, context) => {
       try {
@@ -83,11 +175,23 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { stationId } = args;
+
+        const dataCache = await redis.get('app:stationbyid')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          if (data.id === stationId) {
+            return data
+          } else {
+            await redis.del('app:stationbyid');
+          }
+        }
         const data = await Station.findByPk(stationId, {
           include: {
             model: Bicycles,
           },
         });
+        await redis.set('app:stationbyid', JSON.stringify(data))
+
         return data;
       } catch (err) {
         throw err;
@@ -100,39 +204,69 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { categoryId } = args;
+
+        const dataCache = await redis.get('app:categorybyid')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          if (data.id === categoryId) {
+            return data
+          } else {
+            await redis.del('app:categorybyid');
+          }
+        }
         const data = await Category.findByPk(categoryId, {
           include: {
             model: Bicycles,
           },
         });
+        await redis.set('app:categorybyid', JSON.stringify(data))
+
         return data;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
     getTransactions: async (_, __, context) => {
-      const { user, error } = await context;
-      if (!user) {
-        throw new AuthenticationError(error.message);
-      }
-      const data = await Transaction.findAll({
-        include: [
-          {
-            model: User,
-            attributes: {
-              exclude: ["password"],
-            },
-          },
-        ],
-      });
-      return data;
-    },
-    userHistoryTransaction: async (_, args, context) => {
       try {
         const { user, error } = await context;
         if (!user) {
           throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:transactions')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
+        const data = await Transaction.findAll({
+          include: [
+            {
+              model: User,
+              attributes: {
+                exclude: ["password"],
+              },
+            },
+          ],
+        });
+        await redis.set('app:transactions', JSON.stringify(data))
+        return data;
+      } catch (err) {
+        throw err
+      }
+    },
+    userHistoryTransaction: async (_, __, context) => {
+      try {
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:userhistorytransaction')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          if (data.id === user.id) {
+            return data
+          } else {
+            await redis.del('app:userhistorytransaction');
+          }
         }
         const data = await Transaction.findAll({
           where: { UserId: user.id },
@@ -145,6 +279,8 @@ const resolvers = {
             },
           ],
         });
+        await redis.set('app:userhistorytransaction', JSON.stringify(data))
+
         return data;
       } catch (err) {
         throw err;
@@ -155,6 +291,11 @@ const resolvers = {
         const { user, error } = await context;
         if (!user) {
           throw new AuthenticationError(error.message);
+        }
+        const dataCache = await redis.get('app:qrcode')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
         }
         const data = await Station.findAll({ include: { model: Bicycles } });
         const stationQrcode = await Promise.all(
@@ -176,6 +317,8 @@ const resolvers = {
             return { qrCode: qrCodeString, name: e.name, bicycleQrcode };
           })
         );
+        await redis.set('app:qrcode', JSON.stringify(stationQrcode))
+
         return stationQrcode;
       } catch (err) {
         throw err;
@@ -188,6 +331,11 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
 
+        const dataCache = await redis.get('app:rentalreport')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          return data
+        }
         const today = new Date();
         const sevenDaysAgo = new Date(today);
         sevenDaysAgo.setDate(today.getDate() - 7);
@@ -199,6 +347,8 @@ const resolvers = {
             },
           },
         });
+        await redis.set('app:rentalreport', JSON.stringify(data))
+
         return data;
       } catch (err) {
         throw err;
@@ -214,6 +364,8 @@ const resolvers = {
         }
         const { name, address, latitude, longitude } = args;
         await Station.create({ name, address, latitude, longitude });
+        await redis.del('app:stations');
+
         return "Station created";
       } catch (err) {
         throw err;
@@ -230,6 +382,9 @@ const resolvers = {
           { name, address, latitude, longitude },
           { where: { id: stationId } }
         );
+        await redis.del('app:stations');
+        await redis.del('app:stationbyid');
+
         return `station with id ${stationId} has been updated`;
       } catch (err) {
         console.log(err);
@@ -244,6 +399,8 @@ const resolvers = {
         }
         const { stationId } = args;
         await Station.destroy({ where: { id: stationId } });
+        await redis.del('app:stations');
+
         return `station with id ${stationId} has been deleted`;
       } catch (err) {
         throw err;
@@ -257,6 +414,8 @@ const resolvers = {
         }
         const { name, description } = args;
         await Category.create({ name, description });
+        await redis.del('app:categories');
+
         return "Category created";
       } catch (err) {
         throw err;
@@ -273,6 +432,8 @@ const resolvers = {
           { name, description },
           { where: { id: categoryId } }
         );
+        await redis.del('app:categories');
+
         return `Category with id ${categoryId} has been updated`;
       } catch (err) {
         throw err;
@@ -286,6 +447,8 @@ const resolvers = {
           throw new AuthenticationError("Authorization token invalid");
         }
         await Category.destroy({ where: { id: categoryId } });
+        await redis.del('app:categories');
+
         return `Category with id ${categoryId} has been successfully deleted.`;
       } catch (err) {
         throw err;
@@ -297,7 +460,7 @@ const resolvers = {
         if (!user || user.role === "User") {
           throw new AuthenticationError("Authorization token invalid");
         }
-        const { name, feature, imageURL, description, price, StationId } = args;
+        const { name, feature, imageURL, description, price, StationId, categoryId } = args;
         await Bicycles.create({
           name,
           feature,
@@ -305,7 +468,10 @@ const resolvers = {
           description,
           price,
           StationId,
+          categoryId
         });
+        await redis.del('app:bicycles');
+
         return "Bicycle created";
       } catch (err) {
         throw err;
@@ -325,11 +491,15 @@ const resolvers = {
           price,
           StationId,
           bicycleId,
+          categoryId
         } = args;
         await Bicycles.update(
-          { name, feature, imageURL, description, price, StationId },
+          { name, feature, imageURL, description, price, StationId, categoryId },
           { where: { id: bicycleId } }
         );
+        await redis.del('app:bicycles');
+        await redis.del('app:bicyclebyid')
+
         return `Bicycle with id ${bicycleId} has been updated`;
       } catch (err) {
         throw err;
@@ -343,8 +513,10 @@ const resolvers = {
           throw new AuthenticationError("Authorization token invalid");
         }
         await Bicycles.destroy({ where: { id: bicycleId } });
+        await redis.del('app:bicycles');
         return `bicycle with id ${bicycleId} has been successfully deleted.`;
       } catch (err) {
+        console.log(err);
         throw err;
       }
     },
@@ -356,6 +528,8 @@ const resolvers = {
           return "User created";
         }
         await User.create({ username, role, email, password });
+        await redis.del('app:users');
+
         return "Admin created";
       } catch (err) {
         console.log(err);
@@ -396,7 +570,7 @@ const resolvers = {
       try {
         const {
           rentalId,
-          StationId,
+          stationToken,
           travelledDistance,
           totalPrice,
           transaction,
@@ -405,6 +579,7 @@ const resolvers = {
         if (!user) {
           throw new AuthenticationError(error.message);
         }
+        const payload = jwt.verify(stationToken, JWT_KEY);
 
         const rental = await Rental.findByPk(rentalId);
         if (transaction === "Cash") {
@@ -414,11 +589,14 @@ const resolvers = {
             { transaction: t }
           );
           await Bicycles.update(
-            { status: true, StationId },
+            { status: true, StationId: payload.id },
             { where: { id: rental.BicycleId } },
             { transaction: t }
           );
           await t.commit();
+          await redis.del('app:rentalreport');
+          await redis.del('app:rentals');
+
           return "Rent done";
         }
         const newBalance = user.balance - totalPrice;
@@ -428,7 +606,7 @@ const resolvers = {
           { transaction: t }
         );
         await Bicycles.update(
-          { status: true, StationId },
+          { status: true, StationId: payload.id },
           { where: { id: rental.BicycleId } },
           { transaction: t }
         );
@@ -442,6 +620,13 @@ const resolvers = {
           { transaction: t }
         );
         await t.commit();
+        await redis.del('app:rentalreport');
+        await redis.del('app:rentals');
+        await redis.del('app:bicycles');
+        await redis.del('app:users');
+        await redis.del('app:userdetail');
+        await redis.del('app:transactions');
+        await redis.del('app:userhistorytransaction');
 
         return "Rent done";
       } catch (err) {
@@ -499,6 +684,10 @@ const resolvers = {
           { transaction: t }
         );
         await t.commit();
+        await redis.del('app:users');
+        await redis.del('app:userdetail');
+        await redis.del('app:transactions');
+        await redis.del('app:userhistorytransaction');
         return `success top up with amount ${amount}`;
       } catch (err) {
         t.rollback();
@@ -520,6 +709,8 @@ const resolvers = {
         const salt = bcrypt.genSaltSync(10)
         const hashPassword = bcrypt.hashSync(newPassword, salt)
         await User.update({ password: hashPassword }, { where: { id: user.id } })
+        await redis.del('app:users');
+        await redis.del('app:userdetail');
         return 'Password has been changed'
       } catch (err) {
         throw err

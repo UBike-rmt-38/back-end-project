@@ -29,6 +29,8 @@ type Bicycles {
     StationId: Int
     CategoryId: Int
     status: Boolean
+    Station: Stations
+    Category: Categories
     createdAt: String
     updatedAt: String
 }
@@ -83,6 +85,7 @@ type bicycleQrcode {
 type Query {
     getStations: [Stations]
     getBicycles: [Bicycles]
+    getBicycleById(bicycleId: Int): Bicycles
     getCategories: [Categories]
     getUsers: [Users]
     getUsersDetails: Users
@@ -90,7 +93,7 @@ type Query {
     getCategoriesById(categoryId: Int): Categories
     getStationsById(stationId: Int): Stations
     getTransactions: [Transactions]
-    userHistoryTransaction(UserId: Int): [Transactions]
+    userHistoryTransaction: [Transactions]
     getStationQrCode: [stationQrcode]
     getRentalReport: [Rentals]
 }
@@ -164,7 +167,7 @@ type Mutation {
         travelledDistance: Int!
         totalPrice: Int!
         rentalId: Int!
-        StationId: Int!
+        stationToken: String!
         transaction: String!
     ): String
 
