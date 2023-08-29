@@ -111,24 +111,6 @@ const resolvers = {
         throw err;
       }
     },
-    getCategoriesById: async (_, args, context) => {
-      try {
-        const { user, error } = await context;
-        if (!user) {
-          throw new AuthenticationError(error.message);
-        }
-        const { categoryId } = args;
-        const data = await Category.findByPk(categoryId, {
-          include: {
-            model: Bicycles,
-          },
-        });
-        return data;
-      } catch (err) {
-        console.log(err);
-        throw err;
-      }
-    },
     getTransactions: async (_, __, context) => {
       const { user, error } = await context;
       if (!user) {
@@ -165,7 +147,6 @@ const resolvers = {
         });
         return data;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -186,26 +167,17 @@ const resolvers = {
                   { id: e.id, status: e.status },
                   JWT_KEY
                 );
-                try {
-                  const bicyleQrcode = await QRCode.toDataURL(bicycleToken);
-                  return { qrCode: bicyleQrcode, name: e.name };
-                } catch (err) {
-                  console.log(err);
-                  throw err;
-                }
+                const bicyleQrcode = await QRCode.toDataURL(bicycleToken);
+                return { qrCode: bicyleQrcode, name: e.name };
+
               })
             );
-            try {
-              const qrCodeString = await QRCode.toDataURL(token);
-              return { qrCode: qrCodeString, name: e.name, bicycleQrcode };
-            } catch (err) {
-              throw err;
-            }
+            const qrCodeString = await QRCode.toDataURL(token);
+            return { qrCode: qrCodeString, name: e.name, bicycleQrcode };
           })
         );
         return stationQrcode;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -247,19 +219,6 @@ const resolvers = {
         throw err;
       }
     },
-    addCategory: async (_, args, context) => {
-      try {
-        const { user, error } = await context;
-        if (!user || user.role === "User") {
-          throw new AuthenticationError("Authorization token invalid");
-        }
-        const { name, description } = args;
-        await Category.create({ name, description });
-        return "Category created";
-      } catch (err) {
-        throw error;
-      }
-    },
     editStation: async (_, args, context) => {
       try {
         const { user, error } = await context;
@@ -287,7 +246,6 @@ const resolvers = {
         await Station.destroy({ where: { id: stationId } });
         return `station with id ${stationId} has been deleted`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -317,7 +275,6 @@ const resolvers = {
         );
         return `Category with id ${categoryId} has been updated`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -331,7 +288,6 @@ const resolvers = {
         await Category.destroy({ where: { id: categoryId } });
         return `Category with id ${categoryId} has been successfully deleted.`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -352,7 +308,6 @@ const resolvers = {
         });
         return "Bicycle created";
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -377,7 +332,6 @@ const resolvers = {
         );
         return `Bicycle with id ${bicycleId} has been updated`;
       } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -391,22 +345,6 @@ const resolvers = {
         await Bicycles.destroy({ where: { id: bicycleId } });
         return `bicycle with id ${bicycleId} has been successfully deleted.`;
       } catch (err) {
-        console.log(err);
-        throw err;
-      }
-    },
-
-    deleteCategory: async (_, args, context) => {
-      try {
-        const { user, error } = await context;
-        const { categoryId } = args;
-        if (!user || user.role === "User") {
-          throw new AuthenticationError("Authorization token invalid");
-        }
-        await Category.destroy({ where: { id: categoryId } });
-        return `Category with id ${categoryId} has been successfully deleted.`;
-      } catch (err) {
-        console.log(err);
         throw err;
       }
     },
@@ -434,7 +372,7 @@ const resolvers = {
         const { bicycleToken } = args;
         const payload = jwt.verify(bicycleToken, JWT_KEY);
         const verifyBicycle = await Bicycles.findByPk(payload.id);
-        if (verifyBicycle.status === false) throw "Bicycle unavailable";
+        if (verifyBicycle.status === false) throw new AuthenticationError('Bicycle unavailable')
         await Rental.create(
           { UserId: user.id, BicycleId: payload.id },
           { transaction: t }
@@ -508,7 +446,6 @@ const resolvers = {
         return "Rent done";
       } catch (err) {
         t.rollback();
-        console.log(err);
         throw err;
       }
     },
@@ -569,6 +506,25 @@ const resolvers = {
         throw err;
       }
     },
+    changePassword: async (_, args, context) => {
+      try {
+        const { oldPassword, newPassword } = args;
+        const { user, error } = context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const getUser = await User.findByPk(user.id)
+        const verifyPassword = bcrypt.compareSync(oldPassword, getUser.password)
+        if (!verifyPassword) throw new AuthenticationError('Invalid old password')
+
+        const salt = bcrypt.genSaltSync(10)
+        const hashPassword = bcrypt.hashSync(newPassword, salt)
+        await User.update({ password: hashPassword }, { where: { id: user.id } })
+        return 'Password has been changed'
+      } catch (err) {
+        throw err
+      }
+    }
   },
 };
 

@@ -27,6 +27,7 @@ type Bicycles {
     description: String
     price: Int
     StationId: Int
+    CategoryId: Int
     status: Boolean
     createdAt: String
     updatedAt: String
@@ -177,6 +178,11 @@ type Mutation {
     ): MidtranToken
 
     topUpBalance(amount: Int!): String
+
+    changePassword(
+        oldPassword: String!
+        newPassword: String!
+    ): String
 }
 `
 module.exports = typeDefs

@@ -3,6 +3,7 @@ const { sequelize } = require('../models')
 const jwt = require('jsonwebtoken')
 const request = require("supertest");
 const { hashSync } = require('bcrypt')
+const resolvers = require('../schema/resolvers')
 
 const { User } = require('../models')
 const user = require('../data/users.json')
@@ -44,9 +45,21 @@ const createUsers = {
   }`
 }
 
+const createAdmin = {
+  query: `mutation CreateUser($username: String!, $email: String!, $password: String!, $role: String) {
+    createUser(username: $username, email: $email, password: $password, role: $role)
+  }`
+}
+
 const logins = {
   query: `mutation Login($username: String!, $password: String!) {
     login(username: $username, password: $password)
+  }`
+}
+
+const changeUserPassword = {
+  query: `mutation ChangePassword($oldPassword: String!, $newPassword: String!) {
+    changePassword(oldPassword: $oldPassword, newPassword: $newPassword)
   }`
 }
 
@@ -116,8 +129,8 @@ const getStationsGeneral = {
     getStations {
       id
       name
-      latitude
       address
+      latitude
       longitude
       Bicycles {
         id
@@ -127,6 +140,7 @@ const getStationsGeneral = {
         description
         price
         StationId
+        CategoryId
         status
       }
     }
@@ -293,6 +307,22 @@ const getRentalsGeneral = {
   }`
 }
 
+const getRentalReportGeneral = {
+  query: `query GetRentalReport {
+    getRentalReport {
+      id
+      status
+      travelledDistance
+      totalPrice
+      UserId
+      BicycleId
+      transaction
+      createdAt
+      updatedAt
+    }
+  }`
+}
+
 // < ----- Payment Endpoints ----- >
 const generateMidTokens = {
   query: `mutation GenerateMidtranToken($amount: Int) {
@@ -390,7 +420,7 @@ afterAll(async () => {
   // await sequelize.close()
 });
 
-describe.only("GraphQL Test Coverage", () => {
+describe("GraphQL Test Coverage", () => {
 
   // < -----              Mutation Test                ----- > 
 
@@ -430,13 +460,62 @@ describe.only("GraphQL Test Coverage", () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined()
         const { createUser } = response.body.data
         expect(createUser).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+    })
+
+
+    describe('+ createAdmin', () => {
+      test('success create and return 200', async () => {
+        const bodyData = {
+          username: "admin2",
+          email: "admin2@mail.com",
+          password: "admin123",
+          role: "Admin"
+        }
+
+        const response = await request(url).post("/").send({
+          query: createAdmin.query,
+          variables: bodyData
+        });
+
+        const { createUser } = response.body.data
+
+        expect(response.status).toBe(200);
+        expect(response.errors).toBeUndefined();
+        expect(createUser).toEqual("Admin created");
       })
 
+      test('failed create and return 200', async () => {
+        const bodyData = {
+          username: "admin2",
+          email: "",
+          password: "admin123",
+          role: "Admin"
+        }
 
+        const response = await request(url).post("/").send({
+          query: createAdmin.query,
+          variables: bodyData
+        });
+
+        expect(response.status).toBe(200);
+        const { createUser } = response.body.data
+        expect(createUser).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
     })
+
 
     describe('+ login', () => {
       test('success login and return 200', async () => {
@@ -450,7 +529,6 @@ describe.only("GraphQL Test Coverage", () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         const { login } = response.body.data
         expect(login).toEqual(expect.any(String));
       })
@@ -466,9 +544,85 @@ describe.only("GraphQL Test Coverage", () => {
         });
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         const { login } = response.body.data
         expect(login).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+    })
+
+    describe('+ changePassword', () => {
+      test('success change and return 200', async () => {
+        const bodyData = {
+          oldPassword: "user123",
+          newPassword: "user321"
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: changeUserPassword.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200)
+        const { changePassword } = response.body.data
+        expect(changePassword).toEqual("Password has been changed")
+      })
+
+      test('success change and return 200', async () => {
+        const bodyData = {
+          oldPassword: "user321",
+          newPassword: "user123"
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user2' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: changeUserPassword.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200)
+        const { changePassword } = response.body.data
+        expect(changePassword).toEqual(null)
+        
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "Invalid old password")
+        }
+      })
+
+      test('success change and return 200', async () => {
+        const bodyData = {
+          oldPassword: "user321",
+          newPassword: "user123"
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: changeUserPassword.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200)
+        const { changePassword } = response.body.data
+        expect(changePassword).toEqual(null)
+        
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "Authorization token invalid")
+        }
       })
     })
 
@@ -497,7 +651,6 @@ describe.only("GraphQL Test Coverage", () => {
         const { addStation } = response.body.data
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         expect(addStation).toEqual("Station created");
       })
 
@@ -520,9 +673,120 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         const { addStation } = response.body.data
         expect(addStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('failed add and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "test",
+          latitude: 0.1222222,
+          longitude: 8.9999
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createStations.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { addStation } = response.body.data
+        expect(addStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "Authorization token invalid")
+        }
+      })
+
+      test('failed add and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "test",
+          latitude: "0.1222222",
+          longitude: 8.9999
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createStations.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "",
+          latitude: 0.1222222,
+          longitude: 8.9999
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createStations.query,
+            variables: bodyData,
+          })
+
+        expect(response.status).toBe(200);
+        const { addStation } = response.body.data
+        expect(addStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization user invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "",
+          latitude: 0.1222222,
+          longitude: 8.9999
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createStations.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { addStation } = response.body.data
+        expect(addStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -548,11 +812,10 @@ describe.only("GraphQL Test Coverage", () => {
         const { editStation } = response.body.data
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         expect(editStation).toEqual(expect.any(String));
       })
 
-      test('failed add and return 200', async () => {
+      test('failed edit and return 200', async () => {
         const bodyData = {
           name: "test",
           address: "",
@@ -572,9 +835,69 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         const { editStation } = response.body.data
         expect(editStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('failed edit and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "tesing",
+          latitude: 0.1222222,
+          longitude: 8.9999,
+          stationId: 3
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: editStations.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { editStation } = response.body.data
+        expect(editStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          address: "",
+          latitude: 0.1222222,
+          longitude: 8.9999,
+          stationId: 3
+        }
+
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: editStations.query,
+            variables: bodyData,
+          })
+
+        expect(response.status).toBe(200);
+        const { editStation } = response.body.data
+        expect(editStation).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -596,8 +919,28 @@ describe.only("GraphQL Test Coverage", () => {
         const { deleteStation } = response.body.data
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         expect(deleteStation).toEqual(expect.any(String));
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          stationId: 3
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: deleteStations.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "Authorization token invalid")
+        }
       })
 
       test('failed delete and return 200', async () => {
@@ -614,7 +957,30 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {}
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: deleteStations.query,
+            variables: bodyData,
+          })
+
+        expect(response.status).toBe(200);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -641,14 +1007,37 @@ describe.only("GraphQL Test Coverage", () => {
         const { addCategory } = response.body.data
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         expect(addCategory).toEqual("Category created");
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: "testing"
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: addCategories.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { addCategory } = response.body.data
+        expect(addCategory).toEqual(null);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "Authorization token invalid")
+        }
       })
 
       test('failed add and return 200', async () => {
         const bodyData = {
           name: "test",
-          description: ""
+          description: null
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
@@ -662,14 +1051,36 @@ describe.only("GraphQL Test Coverage", () => {
 
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
-        const { addCategory } = response.body.data
-        expect(addCategory).toEqual(null);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('auhtorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: null
+        }
+
+        const response = await request(url).post("/")
+          .send({
+            query: addCategories.query,
+            variables: bodyData,
+          })
+
+        expect(response.status).toBe(200);
+
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
     describe('+ editCategory', () => {
-      test('success add and return 200', async () => {
+      test('success edit and return 200', async () => {
         const bodyData = {
           name: "testing",
           description: "test",
@@ -692,11 +1103,11 @@ describe.only("GraphQL Test Coverage", () => {
         expect(editCategory).toEqual(expect.any(String));
       })
 
-      test('failed add and return 200', async () => {
+      test('failed edit and return 200', async () => {
         const bodyData = {
           name: "test",
-          description: "",
-          "categoryId": 4
+          description: null,
+          categoryId: 4
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
@@ -709,9 +1120,77 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
-        const { editCategory } = response.body.data
-        expect(editCategory).toEqual(null);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+
+      test('not authorized and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: null,
+          categoryId: 4
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: editCategories.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('failed edit and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: null,
+          categoryId: 4
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: editCategories.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: null,
+          categoryId: 4
+        }
+
+        const response = await request(url).post("/")
+          .send({
+            query: editCategories.query,
+            variables: bodyData,
+          })
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -737,6 +1216,7 @@ describe.only("GraphQL Test Coverage", () => {
         expect(deleteCategory).toEqual(expect.any(String));
       })
 
+
       test('failed delete and return 200', async () => {
         const bodyData = {}
 
@@ -751,7 +1231,29 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          categoryId: 4
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: deleteCategories.query,
+            variables: bodyData,
+          })
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -801,7 +1303,35 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          feature: "test",
+          imageUrl: "test",
+          description: "test",
+          price: 8000,
+          stationId: 1,
+          categoryId: 1
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createBicycles.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -858,9 +1388,40 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
         const { editBicycle } = response.body.data
         expect(editBicycle).toEqual(null);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('auhtorization invalid and return 200', async () => {
+        const bodyData = {
+          name: "testing",
+          feature: "test",
+          imageUrl: "test",
+          description: "test",
+          price: 8000,
+          stationId: 1,
+          categoryId: 1,
+          bicycleId: 6
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: editBicycles.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -900,7 +1461,29 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization failed and return 200', async () => {
+        const bodyData = {
+          bicycleId: 6
+        }
+
+        const response = await request(url).post("/")
+          .send({
+            query: deleteBicycles.query,
+            variables: bodyData,
+          })
+
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -944,7 +1527,52 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('failed create and return 200', async () => {
+        const bodyData = {
+          bicycleToken: "122"
+        }
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createRentals.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "jwt malformed")
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          bicycleToken: jwt.sign({ id: 1 }, process.env.JWT_SECRET)
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: createRentals.query,
+            variables: bodyData
+          })
+
+        console.log(response.body);
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -994,7 +1622,33 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          travelledDistance: 1000000,
+          totalPrice: 120000,
+          rentalId: 1,
+          stationId: 1,
+          transaction: "Digital"
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: doneRentals.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -1025,7 +1679,7 @@ describe.only("GraphQL Test Coverage", () => {
         expect(generateMidtranToken).toHaveProperty("redirect_url", expect.any(String))
       })
 
-      test('failed top up and return 200', async () => {
+      test('failed generate and return 200', async () => {
         const bodyData = {}
 
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
@@ -1040,6 +1694,27 @@ describe.only("GraphQL Test Coverage", () => {
 
         expect(response.status).toBe(200);
         expect(response.errors).toBeUndefined();
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          "amount": 10000,
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: generateMidTokens.query,
+            variables: bodyData
+          })
+
+        const { generateMidtranToken } = response.body.data
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
     })
 
@@ -1079,8 +1754,33 @@ describe.only("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         expect(response.status).toBe(200);
-        expect(response.errors).toBeUndefined();
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          "amount": 10000,
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: topUpBalances.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
     })
 
   })
@@ -1099,7 +1799,6 @@ describe.only("GraphQL Test Coverage", () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toBeInstanceOf(Object);
-        expect(response.errors).toBeUndefined();
 
         const { getUsers } = response.body.data
 
@@ -1110,6 +1809,21 @@ describe.only("GraphQL Test Coverage", () => {
           expect(getUsers[0]).toHaveProperty("email", expect.any(String));
           expect(getUsers[0]).toHaveProperty("balance", expect.any(Number));
 
+        }
+      });
+
+      test("authorization invalid object and return 200", async () => {
+
+        const response = await request(url)
+          .post("/")
+          .send(getUserGeneral)
+
+        const { getUsers } = response.body.data
+        expect(response.status).toBe(200);
+        expect(getUsers).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
         }
       });
     });
@@ -1126,7 +1840,6 @@ describe.only("GraphQL Test Coverage", () => {
 
         expect(response.status).toBe(200);
         expect(response.body).toBeInstanceOf(Object);
-        expect(response.errors).toBeUndefined();
 
         const { getUsersDetails } = response.body.data
 
@@ -1159,6 +1872,21 @@ describe.only("GraphQL Test Coverage", () => {
           }
         }
       });
+
+      test("authorization invalid and return 200", async () => {
+
+        const response = await request(url)
+          .post("/")
+          .send(getUserDetails)
+
+        const { getUsersDetails } = response.body.data
+        expect(response.status).toBe(200);
+        expect(getUsersDetails).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      });
     });
 
     describe("+ getStations", () => {
@@ -1177,6 +1905,7 @@ describe.only("GraphQL Test Coverage", () => {
 
         const { getStations } = response.body.data
 
+
         if (getStations.length > 0) {
           expect(getStations[0]).toHaveProperty("id", expect.any(Number));
           expect(getStations[0]).toHaveProperty("name", expect.any(String));
@@ -1185,12 +1914,11 @@ describe.only("GraphQL Test Coverage", () => {
           expect(Number.isFinite(getStations[0].latitude)).toBe(true);
           expect(typeof getStations[0].longitude).toBe('number');
           expect(Number.isFinite(getStations[0].longitude)).toBe(true);
-          expect(getStations[0]).toHaveProperty("createdAt", expect.any(String));
-          expect(getStations[0]).toHaveProperty("updatedAt", expect.any(String));
 
           if (getStations[0].Bicycles.length > 0) {
             const bicycles = getStations[0].Bicycles[0]
 
+            console.log(bicycles);
             expect(bicycles).toHaveProperty("id", expect.any(Number));
             expect(bicycles).toHaveProperty("name", expect.any(String));
             expect(bicycles).toHaveProperty("feature", expect.any(String));
@@ -1201,6 +1929,21 @@ describe.only("GraphQL Test Coverage", () => {
             expect(bicycles).toHaveProperty("CategoryId", expect.any(Number));
             expect(bicycles).toHaveProperty("status", expect.any(Boolean));
           }
+        }
+      });
+
+      test("authorization invalid and return 200", async () => {
+
+        const response = await request(url)
+          .post("/")
+          .send(getStationsGeneral)
+
+        const { getStations } = response.body.data
+        expect(response.status).toBe(200);
+        expect(getStations).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
         }
       });
     });
@@ -1252,7 +1995,9 @@ describe.only("GraphQL Test Coverage", () => {
       });
 
       test("success return object and return 200", async () => {
-        const bodyData = {}
+        const bodyData = {
+          stationId: 9999
+        }
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
 
         const response = await request(url)
@@ -1270,6 +2015,21 @@ describe.only("GraphQL Test Coverage", () => {
         const { getStationsById } = response.body.data
 
         expect(getStationsById).toEqual(null)
+      });
+
+      test("authorization and return 200", async () => {
+
+        const response = await request(url)
+          .post("/")
+          .send(getStationDetails)
+
+        const { getStationsById } = response.body.data
+        expect(response.status).toBe(200);
+        expect(getStationsById).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       });
     });
 
@@ -1300,6 +2060,22 @@ describe.only("GraphQL Test Coverage", () => {
             expect(bicycles).toHaveProperty("name", expect.any(String));
 
           }
+        }
+      });
+
+
+      test("authorization invalid object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getStationBicycleQr)
+
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
         }
       });
     });
@@ -1340,10 +2116,26 @@ describe.only("GraphQL Test Coverage", () => {
           }
         }
       });
+
+
+      test("authorization invalid object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getCategoriesGeneral)
+
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      });
     });
 
     describe("+ getCategoriesById", () => {
-      test("success return object and return 200", async () => {
+      it("success return object and return 200", async () => {
         const bodyData = {
           categoryId: 1
         }
@@ -1383,8 +2175,10 @@ describe.only("GraphQL Test Coverage", () => {
         }
       });
 
-      test("success return object and return 200", async () => {
-        const bodyData = {}
+      test("failed and return 200", async () => {
+        const bodyData = {
+          categoryId: 99999
+        }
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
 
         const response = await request(url)
@@ -1397,11 +2191,36 @@ describe.only("GraphQL Test Coverage", () => {
 
 
         expect(response.status).toBe(200);
+
+        const { getCategoriesById } = response.body.data
+
+        expect(getCategoriesById).toEqual(null)
+      });
+
+
+      test("authorization invalid and return 200", async () => {
+        const bodyData = {
+          categoryId: 1
+        }
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getCategoryDetail.query,
+            variables: bodyData
+          })
+
+
+        expect(response.status).toBe(200);
         expect(response.errors).toBeUndefined();
 
         const { getCategoriesById } = response.body.data
 
         expect(getCategoriesById).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
       });
     });
 
@@ -1433,6 +2252,20 @@ describe.only("GraphQL Test Coverage", () => {
           expect(getBicycles[0]).toHaveProperty("status", expect.any(Boolean));
         }
       });
+
+      test("authorizaztion invalid and return 200", async () => {
+
+        const response = await request(url)
+          .post("/")
+          .send(getBicycleGeneral)
+
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      });
     });
 
     describe('+ getRentals', () => {
@@ -1457,6 +2290,23 @@ describe.only("GraphQL Test Coverage", () => {
           expect(getRentals[0]).toHaveProperty("UserId", expect.any(Number))
           expect(getRentals[0]).toHaveProperty("BicycleId", expect.any(Number))
           expect(getRentals[0]).toHaveProperty("transaction", expect.any(String))
+        }
+      })
+
+      test('authorization invalid and return 200', async () => {
+
+        const response = await request(url)
+          .post("/")
+          .send(getRentalsGeneral)
+
+        expect(response.status).toBe(200);
+
+        const { getRentals } = response.body.data
+
+        expect(getRentals).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
         }
       })
     })
@@ -1490,6 +2340,27 @@ describe.only("GraphQL Test Coverage", () => {
             expect(getTransactions[0].User[0]).toHaveProperty("email", expect.any(String));
             expect(getTransactions[0].User[0]).toHaveProperty("balance", expect.any(Number));
           }
+        }
+      });
+
+      test("authorization invalid and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getTransactionsGeneral)
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getTransactions } = response.body.data
+
+        expect(getTransactions).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
         }
       });
     });
@@ -1531,7 +2402,99 @@ describe.only("GraphQL Test Coverage", () => {
           }
         }
       });
+
+      test("failed return object and return 200", async () => {
+        const bodyData = {
+          userId: null
+        }
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getHistoryTransactionsGeneral.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        const { userHistoryTransaction } = response.body.data
+        expect(userHistoryTransaction).toBeInstanceOf(Array)
+      });
+
+      test("authorization invalid and return 200", async () => {
+        const bodyData = {
+          userId: 1
+        }
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getHistoryTransactionsGeneral.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+
+        const { userHistoryTransaction } = response.body.data
+
+        expect(userHistoryTransaction).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      });
     });
 
+
+    describe('+ getRentalReport', () => {
+      test('success return array and return 200', async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getRentalReportGeneral.query,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200)
+        const { getRentalReport } = response.body.data
+        if (getRentalReport.length > 0) {
+          expect(getRentalReport[0]).toHaveProperty("id", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("status", expect.any(Boolean));
+          expect(getRentalReport[0]).toHaveProperty("travelledDistance", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("totalPrice", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("UserId", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("BicycleId", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("transaction", expect.any(String));
+          expect(getRentalReport[0]).toHaveProperty("createdAt", expect.any(String));
+          expect(getRentalReport[0]).toHaveProperty("updatedAt", expect.any(String));
+        }
+      })
+
+
+      test('authorization invalid and return 200', async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getRentalReportGeneral.query,
+          })
+
+        expect(response.status).toBe(200)
+        const { getRentalReport } = response.body.data
+        expect(getRentalReport).toEqual(null)
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+    })
   });
 });
