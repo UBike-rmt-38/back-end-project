@@ -587,7 +587,7 @@ const resolvers = {
       try {
         const {
           rentalId,
-          StationId,
+          stationToken,
           travelledDistance,
           totalPrice,
           transaction,
@@ -596,6 +596,7 @@ const resolvers = {
         if (!user) {
           throw new AuthenticationError(error.message);
         }
+        const payload = jwt.verify(stationToken, JWT_KEY);
 
         const rental = await Rental.findByPk(rentalId);
         if (transaction === "Cash") {
@@ -605,7 +606,7 @@ const resolvers = {
             { transaction: t }
           );
           await Bicycles.update(
-            { status: true, StationId },
+            { status: true, StationId: payload.id },
             { where: { id: rental.BicycleId } },
             { transaction: t }
           );
@@ -622,7 +623,7 @@ const resolvers = {
           { transaction: t }
         );
         await Bicycles.update(
-          { status: true, StationId },
+          { status: true, StationId: payload.id },
           { where: { id: rental.BicycleId } },
           { transaction: t }
         );

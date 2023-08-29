@@ -167,7 +167,7 @@ type Mutation {
         travelledDistance: Int!
         totalPrice: Int!
         rentalId: Int!
-        StationId: Int!
+        stationToken: String!
         transaction: String!
     ): String
 
