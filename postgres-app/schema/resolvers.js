@@ -75,6 +75,32 @@ const resolvers = {
         throw err
       }
     },
+    getBicycleById: async (_,args,context) => {
+      try{
+        const { user, error } = await context;
+        if (!user) {
+          throw new AuthenticationError(error.message);
+        }
+        const {id} = args
+        const dataCache = await redis.get('app:bicyclebyid')
+        if (dataCache) {
+          const data = JSON.parse(dataCache)
+          if (data.id === id) {
+            return data
+          } else {
+            await redis.del('app:bicyclebyid');
+          }
+        }
+        const data = await Bicycles.findByPk(id, {
+          include: [{ model: Station }, { model: Category }],
+        });
+        await redis.set('app:bicyclebyid', JSON.stringify(data))
+        
+        return data
+      }catch(err){
+        throw err
+      }
+    },
     getUsers: async (_, __, context) => {
       try {
         const { user, error } = await context;

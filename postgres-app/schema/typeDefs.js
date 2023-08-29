@@ -27,7 +27,10 @@ type Bicycles {
     description: String
     price: Int
     StationId: Int
+    CategoryId: Int
     status: Boolean
+    Station: Stations
+    Category: Categories
     createdAt: String
     upatedAt: String
 }
@@ -82,6 +85,7 @@ type bicycleQrcode {
 type Query {
     getStations: [Stations]
     getBicycles: [Bicycles]
+    getBicycleById(id: Int): Bicycles
     getCategories: [Categories]
     getUsers: [Users]
     getUsersDetails: Users
