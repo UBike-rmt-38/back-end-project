@@ -64,6 +64,8 @@ type Transactions {
     amount: Int
     UserId: Int
     User: Users
+    createdAt: String
+    updatedAt: String
 }
 
 type MidtranToken {

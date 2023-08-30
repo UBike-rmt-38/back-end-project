@@ -32,7 +32,8 @@ const resolvers = {
           return data
         }
         const data = await Station.findAll({ include: { model: Bicycles } });
-        await redis.set('app:stations', JSON.stringify(data))
+        if (data) await redis.set('app:stations', JSON.stringify(data))
+
         return data;
       } catch (err) {
         throw err
@@ -50,7 +51,8 @@ const resolvers = {
           return data
         }
         const data = await Category.findAll({ include: { model: Bicycles } });
-        await redis.set('app:categories', JSON.stringify(data))
+        if (data) await redis.set('app:categories', JSON.stringify(data))
+
         return data;
       } catch (err) {
         throw err
@@ -68,7 +70,8 @@ const resolvers = {
           return data
         }
         const data = await Bicycles.findAll();
-        await redis.set('app:bicycles', JSON.stringify(data))
+        if (data) await redis.set('app:bicycles', JSON.stringify(data))
+
 
         return data;
       } catch (err) {
@@ -82,12 +85,9 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { bicycleId } = args
-        const dataCache = await redis.get('app:bicyclebyid:' + bicycleId)
-        console.log(dataCache, 'data');
-
+        const dataCache = await redis.get('app:bicyclebyid')
         if (dataCache) {
           const data = JSON.parse(dataCache)
-          console.log(data, 'cek dalam if');
           if (data.id === bicycleId) {
             return data
           } else {
@@ -124,7 +124,8 @@ const resolvers = {
           return data
         }
         const data = await User.findAll();
-        await redis.set('app:users', JSON.stringify(data))
+        if (data) await redis.set('app:users', JSON.stringify(data))
+
 
         return data;
       } catch (err) {
@@ -149,7 +150,8 @@ const resolvers = {
         const data = await User.findByPk(user.id, {
           include: [{ model: Transaction }, { model: Rental }],
         });
-        await redis.set('app:userdetail', JSON.stringify(data))
+        if (data) await redis.set('app:userdetail', JSON.stringify(data))
+
 
         return data;
       } catch (err) {
@@ -168,7 +170,8 @@ const resolvers = {
           return data
         }
         const data = await Rental.findAll();
-        await redis.set('app:rentals', JSON.stringify(data))
+        if (data) await redis.set('app:rentals', JSON.stringify(data))
+
 
         return data;
       } catch (err) {
@@ -182,7 +185,6 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { stationId } = args;
-
         const dataCache = await redis.get('app:stationbyid:' + stationId)
         if (dataCache) {
           const data = JSON.parse(dataCache)
@@ -190,25 +192,15 @@ const resolvers = {
             return data
           } else {
             await redis.del('app:stationbyid:' + stationId);
-            const data = await Station.findByPk(stationId, {
-              include: {
-                model: Bicycles,
-              },
-            });
-            await redis.set('app:stationbyid:' + stationId, JSON.stringify(data))
-    
-            return data;
           }
-        } else {
-          const data = await Station.findByPk(stationId, {
-            include: {
-              model: Bicycles,
-            },
-          });
-          await redis.set('app:stationbyid:' + stationId, JSON.stringify(data))
-  
-          return data;
         }
+        const data = await Station.findByPk(stationId, {
+          include: {
+            model: Bicycles,
+          },
+        });
+        if (data) await redis.set('app:stationbyid', JSON.stringify(data))
+        return data;
       } catch (err) {
         throw err;
       }
@@ -220,7 +212,6 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { categoryId } = args;
-
         const dataCache = await redis.get('app:categorybyid:' + categoryId)
         if (dataCache) {
           const data = JSON.parse(dataCache)
@@ -235,8 +226,7 @@ const resolvers = {
             model: Bicycles,
           },
         });
-        await redis.set('app:categorybyid:' + categoryId, JSON.stringify(data))
-
+        if (data) await redis.set('app:categorybyid', JSON.stringify(data))
         return data;
       } catch (err) {
         throw err;
@@ -263,7 +253,8 @@ const resolvers = {
             },
           ],
         });
-        await redis.set('app:transactions', JSON.stringify(data))
+        if (data) await redis.set('app:transactions', JSON.stringify(data))
+
         return data;
       } catch (err) {
         throw err
@@ -295,7 +286,8 @@ const resolvers = {
             },
           ],
         });
-        await redis.set('app:userhistorytransaction', JSON.stringify(data))
+        if (data) await redis.set('app:userhistorytransaction', JSON.stringify(data))
+
 
         return data;
       } catch (err) {
@@ -333,7 +325,8 @@ const resolvers = {
             return { qrCode: qrCodeString, name: e.name, bicycleQrcode };
           })
         );
-        await redis.set('app:qrcode', JSON.stringify(stationQrcode))
+        if (data) await redis.set('app:qrcode', JSON.stringify(data))
+
 
         return stationQrcode;
       } catch (err) {
@@ -363,7 +356,7 @@ const resolvers = {
             },
           },
         });
-        await redis.set('app:rentalreport', JSON.stringify(data))
+        if (data) await redis.set('app:rentalreport', JSON.stringify(data))
 
         return data;
       } catch (err) {
@@ -399,7 +392,7 @@ const resolvers = {
           { where: { id: stationId } }
         );
         await redis.del('app:stations');
-        await redis.del('app:stationbyid');
+        await redis.del('app:stationbyid:' + stationId);
 
         return `station with id ${stationId} has been updated`;
       } catch (err) {
@@ -431,6 +424,7 @@ const resolvers = {
         const { name, description } = args;
         await Category.create({ name, description });
         await redis.del('app:categories');
+        
 
         return "Category created";
       } catch (err) {
@@ -449,6 +443,7 @@ const resolvers = {
           { where: { id: categoryId } }
         );
         await redis.del('app:categories');
+        await redis.del('app:categorybyid:' + categoryId);
 
         return `Category with id ${categoryId} has been updated`;
       } catch (err) {
@@ -514,7 +509,7 @@ const resolvers = {
           { where: { id: bicycleId } }
         );
         await redis.del('app:bicycles');
-        await redis.del('app:bicyclebyid')
+        await redis.del('app:bicyclebyid:' + bicycleId)
 
         return `Bicycle with id ${bicycleId} has been updated`;
       } catch (err) {
@@ -573,6 +568,8 @@ const resolvers = {
           { transaction: t }
         );
         await t.commit();
+        await redis.del('app:userdetail');
+
 
         return "Rent start";
       } catch (err) {
@@ -612,6 +609,7 @@ const resolvers = {
           await t.commit();
           await redis.del('app:rentalreport');
           await redis.del('app:rentals');
+          await redis.del('app:userdetail');
 
           return "Rent done";
         }
