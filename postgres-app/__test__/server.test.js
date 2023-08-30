@@ -280,6 +280,28 @@ const getBicycleGeneral = {
   }`
 }
 
+const getBicycleDetails = {
+  query: `query GetBicycleById($bicycleId: Int) {
+    getBicycleById(bicycleId: $bicycleId) {
+      id
+      name
+      feature
+      imageURL
+      description
+      price
+      StationId
+      CategoryId
+      status
+      Station {
+        name
+      }
+      Category {
+        name
+      }
+    }
+  }`
+}
+
 
 // < ----- Rental Endpoints ----- >
 const createRentals = {
@@ -1132,11 +1154,34 @@ describe("GraphQL Test Coverage", () => {
       test('not authorized and return 200', async () => {
         const bodyData = {
           name: "test",
-          description: null,
+          description: "test",
           categoryId: 4
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: editCategories.query,
+            variables: bodyData,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', "Authorization token invalid")
+        }
+      })
+
+      test('failed edit and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: null,
+          categoryId: 4
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
 
         const response = await request(url).post("/")
           .send({
@@ -1157,6 +1202,29 @@ describe("GraphQL Test Coverage", () => {
           name: "test",
           description: null,
           categoryId: 4
+        }
+
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url).post("/")
+          .send({
+            query: editCategories.query,
+            variables: bodyData,
+          })
+          .set('Authorization', "hallo");
+
+        expect(response.status).toBe(500);
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+
+
+      test('failed edit id not found and return 200', async () => {
+        const bodyData = {
+          name: "test",
+          description: "testing",
         }
 
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
@@ -1810,6 +1878,30 @@ describe("GraphQL Test Coverage", () => {
         }
       });
 
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getUserGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+
+        const { getUsers } = response.body.data
+
+        if (getUsers.length > 0) {
+          expect(getUsers[0]).toHaveProperty("id", expect.any(Number));
+          expect(getUsers[0]).toHaveProperty("username", expect.any(String));
+          expect(getUsers[0]).toHaveProperty("role", expect.any(String));
+          expect(getUsers[0]).toHaveProperty("email", expect.any(String));
+          expect(getUsers[0]).toHaveProperty("balance", expect.any(Number));
+
+        }
+      });
+
       test("authorization invalid object and return 200", async () => {
 
         const response = await request(url)
@@ -1827,6 +1919,50 @@ describe("GraphQL Test Coverage", () => {
     });
 
     describe("+ getUsersDetails", () => {
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getUserDetails)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+
+        const { getUsersDetails } = response.body.data
+
+        if (getUsersDetails.length > 0) {
+          expect(getUsersDetails[0]).toHaveProperty("id", expect.any(Number));
+          expect(getUsersDetails[0]).toHaveProperty("username", expect.any(String));
+          expect(getUsersDetails[0]).toHaveProperty("role", expect.any(String));
+          expect(getUsersDetails[0]).toHaveProperty("email", expect.any(String));
+          expect(getUsersDetails[0]).toHaveProperty("balance", expect.any(Number));
+
+          if (getUserDetails[0].Rentals.length > 0) {
+            const rentals = getUserDetails[0].Rentals[0]
+
+            expect(rentals).toHaveProperty("id", expect.any(Number));
+            expect(rentals).toHaveProperty("status", expect.any(Boolean));
+            expect(rentals).toHaveProperty("travelledDistance", expect.any(Number));
+            expect(rentals).toHaveProperty("totalPrice", expect.any(Number));
+            expect(rentals).toHaveProperty("UserId", expect.any(Number));
+            expect(rentals).toHaveProperty("BicycleId", expect.any(Number));
+            expect(rentals).toHaveProperty("transaction", expect.any(String));
+          }
+
+          if (getUserDetails[0].Transactions.length > 0) {
+            const transactions = getUserDetails[0].Transactions[0]
+
+            expect(transactions).toHaveProperty("id", expect.any(Number));
+            expect(transactions).toHaveProperty("action", expect.any(String));
+            expect(transactions).toHaveProperty("amount", expect.any(Number));
+            expect(transactions).toHaveProperty("UserId", expect.any(Number));
+          }
+        }
+      });
+
       test("success return object and return 200", async () => {
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
 
@@ -1929,6 +2065,47 @@ describe("GraphQL Test Coverage", () => {
         }
       });
 
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getStationsGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getStations } = response.body.data
+
+
+        if (getStations.length > 0) {
+          expect(getStations[0]).toHaveProperty("id", expect.any(Number));
+          expect(getStations[0]).toHaveProperty("name", expect.any(String));
+          expect(getStations[0]).toHaveProperty("address", expect.any(String));
+          expect(typeof getStations[0].latitude).toBe('number');
+          expect(Number.isFinite(getStations[0].latitude)).toBe(true);
+          expect(typeof getStations[0].longitude).toBe('number');
+          expect(Number.isFinite(getStations[0].longitude)).toBe(true);
+
+          if (getStations[0].Bicycles.length > 0) {
+            const bicycles = getStations[0].Bicycles[0]
+
+            expect(bicycles).toHaveProperty("id", expect.any(Number));
+            expect(bicycles).toHaveProperty("name", expect.any(String));
+            expect(bicycles).toHaveProperty("feature", expect.any(String));
+            expect(bicycles).toHaveProperty("imageURL", expect.any(String));
+            expect(bicycles).toHaveProperty("description", expect.any(String));
+            expect(bicycles).toHaveProperty("price", expect.any(Number));
+            expect(bicycles).toHaveProperty("StationId", expect.any(Number));
+            expect(bicycles).toHaveProperty("CategoryId", expect.any(Number));
+            expect(bicycles).toHaveProperty("status", expect.any(Boolean));
+          }
+        }
+      });
+
       test("authorization invalid and return 200", async () => {
 
         const response = await request(url)
@@ -1947,6 +2124,50 @@ describe("GraphQL Test Coverage", () => {
 
 
     describe("+ getStationsById", () => {
+      test("success return object and return 200", async () => {
+        const bodyData = {
+          stationId: 1
+        }
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getStationDetails.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getStationsById } = response.body.data
+
+        expect(getStationsById).toHaveProperty("id", expect.any(Number));
+        expect(getStationsById).toHaveProperty("name", expect.any(String));
+        expect(getStationsById).toHaveProperty("address", expect.any(String));
+        expect(typeof getStationsById.latitude).toBe('number');
+        expect(Number.isFinite(getStationsById.latitude)).toBe(true);
+        expect(typeof getStationsById.longitude).toBe('number');
+        expect(Number.isFinite(getStationsById.longitude)).toBe(true);
+
+        if (getStationsById.Bicycles.length > 0) {
+          const bicycles = getStationsById.Bicycles[0]
+
+          expect(bicycles).toHaveProperty("id", expect.any(Number));
+          expect(bicycles).toHaveProperty("name", expect.any(String));
+          expect(bicycles).toHaveProperty("feature", expect.any(String));
+          expect(bicycles).toHaveProperty("imageURL", expect.any(String));
+          expect(bicycles).toHaveProperty("description", expect.any(String));
+          expect(bicycles).toHaveProperty("price", expect.any(Number));
+          expect(bicycles).toHaveProperty("StationId", expect.any(Number));
+          expect(bicycles).toHaveProperty("CategoryId", expect.any(Number));
+          expect(bicycles).toHaveProperty("status", expect.any(Boolean));
+        }
+      });
+
       test("success return object and return 200", async () => {
         const bodyData = {
           stationId: 1
@@ -2060,6 +2281,34 @@ describe("GraphQL Test Coverage", () => {
         }
       });
 
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getStationBicycleQr)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+
+        const { getStationQrCode } = response.body.data
+
+        if (getStationQrCode.length > 0) {
+          expect(getStationQrCode[0]).toHaveProperty("qrCode", expect.any(String));
+          expect(getStationQrCode[0]).toHaveProperty("name", expect.any(String));
+
+          if (getStationQrCode[0].bicycleQrcode.length > 0) {
+            const bicycles = getStationQrCode[0].bicycleQrcode[0]
+
+            expect(bicycles).toHaveProperty("qrCode", expect.any(String));
+            expect(bicycles).toHaveProperty("name", expect.any(String));
+
+          }
+        }
+      });
+
 
       test("authorization invalid object and return 200", async () => {
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
@@ -2114,6 +2363,42 @@ describe("GraphQL Test Coverage", () => {
         }
       });
 
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getCategoriesGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getCategories } = response.body.data
+
+        if (getCategories.length > 0) {
+          expect(getCategories[0]).toHaveProperty("id", expect.any(Number));
+          expect(getCategories[0]).toHaveProperty("name", expect.any(String));
+          expect(getCategories[0]).toHaveProperty("description", expect.any(String));
+
+          if (getCategories[0].Bicycles.length > 0) {
+            const bicycles = getCategories[0].Bicycles[0]
+
+            expect(bicycles).toHaveProperty("id", expect.any(Number));
+            expect(bicycles).toHaveProperty("name", expect.any(String));
+            expect(bicycles).toHaveProperty("feature", expect.any(String));
+            expect(bicycles).toHaveProperty("imageURL", expect.any(String));
+            expect(bicycles).toHaveProperty("description", expect.any(String));
+            expect(bicycles).toHaveProperty("price", expect.any(Number));
+            expect(bicycles).toHaveProperty("StationId", expect.any(Number));
+            expect(bicycles).toHaveProperty("CategoryId", expect.any(Number));
+            expect(bicycles).toHaveProperty("status", expect.any(Boolean));
+          }
+        }
+      });
+
 
       test("authorization invalid object and return 200", async () => {
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
@@ -2132,7 +2417,47 @@ describe("GraphQL Test Coverage", () => {
     });
 
     describe("+ getCategoriesById", () => {
-      it("success return object and return 200", async () => {
+      test("success return object and return 200", async () => {
+        const bodyData = {
+          categoryId: 1
+        }
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getCategoryDetail.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getCategoriesById } = response.body.data
+
+        expect(getCategoriesById).toHaveProperty("id", expect.any(Number));
+        expect(getCategoriesById).toHaveProperty("name", expect.any(String));
+        expect(getCategoriesById).toHaveProperty("description", expect.any(String));
+
+        if (getCategoriesById.Bicycles.length > 0) {
+          const bicycles = getCategoriesById.Bicycles[0]
+
+          expect(bicycles).toHaveProperty("id", expect.any(Number));
+          expect(bicycles).toHaveProperty("name", expect.any(String));
+          expect(bicycles).toHaveProperty("feature", expect.any(String));
+          expect(bicycles).toHaveProperty("imageURL", expect.any(String));
+          expect(bicycles).toHaveProperty("description", expect.any(String));
+          expect(bicycles).toHaveProperty("price", expect.any(Number));
+          expect(bicycles).toHaveProperty("StationId", expect.any(Number));
+          expect(bicycles).toHaveProperty("CategoryId", expect.any(Number));
+          expect(bicycles).toHaveProperty("status", expect.any(Boolean));
+        }
+      });
+
+      test("success return object and return 200", async () => {
         const bodyData = {
           categoryId: 1
         }
@@ -2250,6 +2575,34 @@ describe("GraphQL Test Coverage", () => {
         }
       });
 
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getBicycleGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getBicycles } = response.body.data
+
+        if (getBicycles.length > 0) {
+          expect(getBicycles[0]).toHaveProperty("id", expect.any(Number));
+          expect(getBicycles[0]).toHaveProperty("name", expect.any(String));
+          expect(getBicycles[0]).toHaveProperty("feature", expect.any(String));
+          expect(getBicycles[0]).toHaveProperty("imageURL", expect.any(String));
+          expect(getBicycles[0]).toHaveProperty("description", expect.any(String));
+          expect(getBicycles[0]).toHaveProperty("price", expect.any(Number));
+          expect(getBicycles[0]).toHaveProperty("StationId", expect.any(Number));
+          expect(getBicycles[0]).toHaveProperty("CategoryId", expect.any(Number));
+          expect(getBicycles[0]).toHaveProperty("status", expect.any(Boolean));
+        }
+      });
+
       test("authorizaztion invalid and return 200", async () => {
 
         const response = await request(url)
@@ -2265,7 +2618,140 @@ describe("GraphQL Test Coverage", () => {
       });
     });
 
+    describe('+ getBicycleById', () => {
+      test('success return object and return 200', async () => {
+        const bodyData = {
+          bicycleId: 1
+        }
+        const { dataValues } = await User.findOne({ where: { username: "admin" } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getBicycleDetails.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET))
+
+        expect(response.status).toBe(200)
+        expect(response.body).toBeInstanceOf(Object)
+        const { getBicycleById } = response.body.data
+
+        expect(getBicycleById).toHaveProperty("id", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("name", expect.any(String))
+        expect(getBicycleById).toHaveProperty("feature", expect.any(String))
+        expect(getBicycleById).toHaveProperty("imageURL", expect.any(String))
+        expect(getBicycleById).toHaveProperty("description", expect.any(String))
+        expect(getBicycleById).toHaveProperty("price", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("StationId", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("CategoryId", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("status", expect.any(Boolean))
+        expect(getBicycleById.Station).toHaveProperty("name", expect.any(String))
+        expect(getBicycleById.Category).toHaveProperty("name", expect.any(String))
+      })
+
+      test('success return object and return 200', async () => {
+        const bodyData = {
+          bicycleId: 1
+        }
+        const { dataValues } = await User.findOne({ where: { username: "admin" } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getBicycleDetails.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET))
+
+        expect(response.status).toBe(200)
+        expect(response.body).toBeInstanceOf(Object)
+        const { getBicycleById } = response.body.data
+
+        expect(getBicycleById).toHaveProperty("id", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("name", expect.any(String))
+        expect(getBicycleById).toHaveProperty("feature", expect.any(String))
+        expect(getBicycleById).toHaveProperty("imageURL", expect.any(String))
+        expect(getBicycleById).toHaveProperty("description", expect.any(String))
+        expect(getBicycleById).toHaveProperty("price", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("StationId", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("CategoryId", expect.any(Number))
+        expect(getBicycleById).toHaveProperty("status", expect.any(Boolean))
+        expect(getBicycleById.Station).toHaveProperty("name", expect.any(String))
+        expect(getBicycleById.Category).toHaveProperty("name", expect.any(String))
+      })
+
+      test('failed to get by id and return 200', async () => {
+        const bodyData = {
+          bicycleId: 99
+        }
+        const { dataValues } = await User.findOne({ where: { username: "admin" } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getBicycleDetails.query,
+            variables: bodyData
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET))
+
+        expect(response.status).toBe(200)
+        expect(response.body).toBeInstanceOf(Object)
+        const { getBicycleById } = response.body.data
+
+        expect(getBicycleById).toEqual(null)
+      })
+
+      test('authorization invalid and return 200', async () => {
+        const bodyData = {
+          bicycleId: 99
+        }
+        const { dataValues } = await User.findOne({ where: { username: "admin" } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getBicycleDetails.query,
+            variables: bodyData
+          })
+
+        expect(response.status).toBe(200)
+        expect(response.body).toBeInstanceOf(Object)
+        const { getBicycleById } = response.body.data
+        expect(getBicycleById).toEqual(null)
+        
+        const { errors } = response.body
+        if (errors.length > 0) {
+          expect(errors[0]).toHaveProperty('message', expect.any(String))
+        }
+      })
+    })
+
     describe('+ getRentals', () => {
+      test('success return object and return 200', async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getRentalsGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        expect(response.errors).toBeUndefined();
+
+        const { getRentals } = response.body.data
+
+        if (getRentals.length > 0) {
+          expect(getRentals[0]).toHaveProperty("id", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("status", expect.any(Boolean))
+          expect(getRentals[0]).toHaveProperty("travelledDistance", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("totalPrice", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("UserId", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("BicycleId", expect.any(Number))
+          expect(getRentals[0]).toHaveProperty("transaction", expect.any(String))
+        }
+      })
+
       test('success return object and return 200', async () => {
         const { dataValues } = await User.findOne({ where: { username: 'user1' } })
 
@@ -2309,6 +2795,37 @@ describe("GraphQL Test Coverage", () => {
     })
 
     describe("+ getTransactions", () => {
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send(getTransactionsGeneral)
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { getTransactions } = response.body.data
+
+        if (getTransactions.length > 0) {
+          expect(getTransactions[0]).toHaveProperty("id", expect.any(Number));
+          expect(getTransactions[0]).toHaveProperty("action", expect.any(String));
+          expect(getTransactions[0]).toHaveProperty("amount", expect.any(Number));
+          expect(getTransactions[0]).toHaveProperty("UserId", expect.any(Number));
+
+          if (getTransactions[0].User.length > 0) {
+            expect(getTransactions[0].User[0]).toHaveProperty("id", expect.any(Number));
+            expect(getTransactions[0].User[0]).toHaveProperty("username", expect.any(String));
+            expect(getTransactions[0].User[0]).toHaveProperty("role", expect.any(String));
+            expect(getTransactions[0].User[0]).toHaveProperty("email", expect.any(String));
+            expect(getTransactions[0].User[0]).toHaveProperty("balance", expect.any(Number));
+          }
+        }
+      });
+
       test("success return object and return 200", async () => {
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
 
@@ -2395,6 +2912,38 @@ describe("GraphQL Test Coverage", () => {
         }
       });
 
+      test("success return object and return 200", async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getHistoryTransactionsGeneral.query
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Object);
+        expect(response.errors).toBeUndefined();
+
+        const { userHistoryTransaction } = response.body.data
+
+        if (userHistoryTransaction.length > 0) {
+          expect(userHistoryTransaction[0]).toHaveProperty("id", expect.any(Number));
+          expect(userHistoryTransaction[0]).toHaveProperty("action", expect.any(String));
+          expect(userHistoryTransaction[0]).toHaveProperty("amount", expect.any(Number));
+          expect(userHistoryTransaction[0]).toHaveProperty("UserId", expect.any(Number));
+
+          if (userHistoryTransaction[0].User.length > 0) {
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("id", expect.any(Number));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("username", expect.any(String));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("role", expect.any(String));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("email", expect.any(String));
+            expect(userHistoryTransaction[0].User[0]).toHaveProperty("balance", expect.any(Number));
+          }
+        }
+      });
+
       test("failed return object and return 200", async () => {
         const bodyData = {
           userId: null
@@ -2444,6 +2993,31 @@ describe("GraphQL Test Coverage", () => {
 
 
     describe('+ getRentalReport', () => {
+      test('success return array and return 200', async () => {
+        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+
+        const response = await request(url)
+          .post("/")
+          .send({
+            query: getRentalReportGeneral.query,
+          })
+          .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
+
+        expect(response.status).toBe(200)
+        const { getRentalReport } = response.body.data
+        if (getRentalReport.length > 0) {
+          expect(getRentalReport[0]).toHaveProperty("id", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("status", expect.any(Boolean));
+          expect(getRentalReport[0]).toHaveProperty("travelledDistance", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("totalPrice", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("UserId", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("BicycleId", expect.any(Number));
+          expect(getRentalReport[0]).toHaveProperty("transaction", expect.any(String));
+          expect(getRentalReport[0]).toHaveProperty("createdAt", expect.any(String));
+          expect(getRentalReport[0]).toHaveProperty("updatedAt", expect.any(String));
+        }
+      })
+
       test('success return array and return 200', async () => {
         const { dataValues } = await User.findOne({ where: { username: 'admin' } })
 
