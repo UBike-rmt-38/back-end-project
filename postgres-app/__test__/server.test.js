@@ -10,7 +10,8 @@ const user = require('../data/users.json')
 const stations = require('../data/station.json')
 const bicycles = require('../data/bicycles.json')
 const rentals = require('../data/rentals.json')
-const categories = require('../data/categories.json')
+const categories = require('../data/categories.json');
+const redis = require("../config/ioredis");
 
 user.forEach((e) => {
   e.createdAt = new Date()
@@ -418,6 +419,7 @@ afterAll(async () => {
   })
   await server?.stop();
   // await sequelize.close()
+  await redis.quit();
 });
 
 describe("GraphQL Test Coverage", () => {
