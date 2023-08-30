@@ -82,30 +82,31 @@ const resolvers = {
           throw new AuthenticationError(error.message);
         }
         const { bicycleId } = args
-        const dataCache = await redis.get('app:bicyclebyid')
+        const dataCache = await redis.get('app:bicyclebyid:' + bicycleId)
         console.log(dataCache, 'data');
 
-        if (dataCache !== null) {
+        if (dataCache) {
           const data = JSON.parse(dataCache)
           console.log(data, 'cek dalam if');
           if (data.id === bicycleId) {
             return data
           } else {
-            await redis.del('app:bicyclebyid');
+            await redis.del('app:bicyclebyid:' + bicycleId);
             const data = await Bicycles.findByPk(bicycleId, {
               include: [{ model: Station }, { model: Category }],
             });
-            if (data) await redis.set('app:bicyclebyid', JSON.stringify(data))
+            if (data) await redis.set('app:bicyclebyid:' + bicycleId , JSON.stringify(data))
     
             return data
           }
+        } else {
+          const data = await Bicycles.findByPk(bicycleId, {
+            include: [{ model: Station }, { model: Category }],
+          });
+          if (data) await redis.set('app:bicyclebyid:' + bicycleId, JSON.stringify(data))
+  
+          return data
         }
-        const data = await Bicycles.findByPk(bicycleId, {
-          include: [{ model: Station }, { model: Category }],
-        });
-        if (data) await redis.set('app:bicyclebyid', JSON.stringify(data))
-
-        return data
       } catch (err) {
         console.log(err);
         throw err
@@ -182,31 +183,32 @@ const resolvers = {
         }
         const { stationId } = args;
 
-        const dataCache = await redis.get('app:stationbyid')
+        const dataCache = await redis.get('app:stationbyid:' + stationId)
         if (dataCache) {
           const data = JSON.parse(dataCache)
           if (data.id === stationId) {
             return data
           } else {
-            await redis.del('app:stationbyid');
+            await redis.del('app:stationbyid:' + stationId);
             const data = await Station.findByPk(stationId, {
               include: {
                 model: Bicycles,
               },
             });
-            await redis.set('app:stationbyid', JSON.stringify(data))
+            await redis.set('app:stationbyid:' + stationId, JSON.stringify(data))
     
             return data;
           }
+        } else {
+          const data = await Station.findByPk(stationId, {
+            include: {
+              model: Bicycles,
+            },
+          });
+          await redis.set('app:stationbyid:' + stationId, JSON.stringify(data))
+  
+          return data;
         }
-        const data = await Station.findByPk(stationId, {
-          include: {
-            model: Bicycles,
-          },
-        });
-        await redis.set('app:stationbyid', JSON.stringify(data))
-
-        return data;
       } catch (err) {
         throw err;
       }
@@ -219,13 +221,13 @@ const resolvers = {
         }
         const { categoryId } = args;
 
-        const dataCache = await redis.get('app:categorybyid')
+        const dataCache = await redis.get('app:categorybyid:' + categoryId)
         if (dataCache) {
           const data = JSON.parse(dataCache)
           if (data.id === categoryId) {
             return data
           } else {
-            await redis.del('app:categorybyid');
+            await redis.del('app:categorybyid:' + categoryId);
           }
         }
         const data = await Category.findByPk(categoryId, {
@@ -233,7 +235,7 @@ const resolvers = {
             model: Bicycles,
           },
         });
-        await redis.set('app:categorybyid', JSON.stringify(data))
+        await redis.set('app:categorybyid:' + categoryId, JSON.stringify(data))
 
         return data;
       } catch (err) {
