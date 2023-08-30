@@ -93,6 +93,12 @@ const resolvers = {
             return data
           } else {
             await redis.del('app:bicyclebyid');
+            const data = await Bicycles.findByPk(bicycleId, {
+              include: [{ model: Station }, { model: Category }],
+            });
+            if (data) await redis.set('app:bicyclebyid', JSON.stringify(data))
+    
+            return data
           }
         }
         const data = await Bicycles.findByPk(bicycleId, {
@@ -187,6 +193,14 @@ const resolvers = {
             return data
           } else {
             await redis.del('app:stationbyid');
+            const data = await Station.findByPk(stationId, {
+              include: {
+                model: Bicycles,
+              },
+            });
+            await redis.set('app:stationbyid', JSON.stringify(data))
+    
+            return data;
           }
         }
         const data = await Station.findByPk(stationId, {
