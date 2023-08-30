@@ -288,8 +288,8 @@ const createRentals = {
 }
 
 const doneRentals = {
-  query: `mutation DoneRental($travelledDistance: Int!, $totalPrice: Int!, $rentalId: Int!, $stationId: Int!, $transaction: String!) {
-    doneRental(travelledDistance: $travelledDistance, totalPrice: $totalPrice, rentalId: $rentalId, StationId: $stationId, transaction: $transaction)
+  query: `mutation Mutation($travelledDistance: Int!, $totalPrice: Int!, $rentalId: Int!, $stationToken: String!, $transaction: String!) {
+    doneRental(travelledDistance: $travelledDistance, totalPrice: $totalPrice, rentalId: $rentalId, stationToken: $stationToken, transaction: $transaction)
   }`
 }
 
@@ -357,19 +357,19 @@ const getTransactionsGeneral = {
 }
 
 const getHistoryTransactionsGeneral = {
-  query: `query UserHistoryTransaction($userId: Int) {
-    userHistoryTransaction(UserId: $userId) {
+  query: `query Query {
+    userHistoryTransaction {
       id
       action
       amount
       UserId
       User {
         id
-        username
-        role
         email
-        password
         balance
+        role
+        username
+        password
       }
     }
   }`
@@ -1508,7 +1508,6 @@ describe("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
 
         const { createRental } = response.body.data
-        console.log(response.body);
 
         expect(response.status).toBe(200);
         expect(createRental).toEqual("Rent start");
@@ -1566,8 +1565,6 @@ describe("GraphQL Test Coverage", () => {
             variables: bodyData
           })
 
-        console.log(response.body);
-
         expect(response.status).toBe(200);
         const { errors } = response.body
         if (errors.length > 0) {
@@ -1582,7 +1579,7 @@ describe("GraphQL Test Coverage", () => {
           travelledDistance: 1000000,
           totalPrice: 120000,
           rentalId: 1,
-          stationId: 1,
+          stationToken: jwt.sign({ id: 1 }, process.env.JWT_SECRET),
           transaction: "Digital"
         }
 
@@ -1597,7 +1594,6 @@ describe("GraphQL Test Coverage", () => {
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET))
 
         const { doneRental } = response.body.data
-        console.log(response.body);
 
         expect(response.status).toBe(200);
         expect(doneRental).toEqual("Rent done");
@@ -1918,7 +1914,6 @@ describe("GraphQL Test Coverage", () => {
           if (getStations[0].Bicycles.length > 0) {
             const bicycles = getStations[0].Bicycles[0]
 
-            console.log(bicycles);
             expect(bicycles).toHaveProperty("id", expect.any(Number));
             expect(bicycles).toHaveProperty("name", expect.any(String));
             expect(bicycles).toHaveProperty("feature", expect.any(String));
@@ -2367,19 +2362,14 @@ describe("GraphQL Test Coverage", () => {
 
     describe("+ userHistoryTransaction", () => {
       test("success return object and return 200", async () => {
-        const bodyData = {
-          userId: 1
-        }
-        const { dataValues } = await User.findOne({ where: { username: 'admin' } })
+        const { dataValues } = await User.findOne({ where: { username: 'user1' } })
 
         const response = await request(url)
           .post("/")
           .send({
-            query: getHistoryTransactionsGeneral.query,
-            variables: bodyData
+            query: getHistoryTransactionsGeneral.query
           })
           .set('Authorization', jwt.sign(dataValues, process.env.JWT_SECRET));
-
 
         expect(response.status).toBe(200);
         expect(response.body).toBeInstanceOf(Object);
