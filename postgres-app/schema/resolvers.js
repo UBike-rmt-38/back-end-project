@@ -399,7 +399,7 @@ const resolvers = {
           { where: { id: stationId } }
         );
         await redis.del('app:stations');
-        await redis.del('app:stationbyid');
+        await redis.del('app:stationbyid:' + stationId);
 
         return `station with id ${stationId} has been updated`;
       } catch (err) {
@@ -431,6 +431,7 @@ const resolvers = {
         const { name, description } = args;
         await Category.create({ name, description });
         await redis.del('app:categories');
+        
 
         return "Category created";
       } catch (err) {
@@ -449,6 +450,7 @@ const resolvers = {
           { where: { id: categoryId } }
         );
         await redis.del('app:categories');
+        await redis.del('app:categorybyid:' + categoryId);
 
         return `Category with id ${categoryId} has been updated`;
       } catch (err) {
@@ -514,7 +516,7 @@ const resolvers = {
           { where: { id: bicycleId } }
         );
         await redis.del('app:bicycles');
-        await redis.del('app:bicyclebyid')
+        await redis.del('app:bicyclebyid:' + bicycleId)
 
         return `Bicycle with id ${bicycleId} has been updated`;
       } catch (err) {
