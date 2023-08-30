@@ -564,6 +564,8 @@ const resolvers = {
           { transaction: t }
         );
         await t.commit();
+        await redis.del('app:userdetail');
+
 
         return "Rent start";
       } catch (err) {
@@ -603,6 +605,7 @@ const resolvers = {
           await t.commit();
           await redis.del('app:rentalreport');
           await redis.del('app:rentals');
+          await redis.del('app:userdetail');
 
           return "Rent done";
         }
