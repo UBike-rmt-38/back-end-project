@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Regular",
+    "description": "Didesain khusus untuk area perkotaan, nyaman kegiatan sehari hari dan olahraga akhir pekan secara fun"
+  },
+  {
+    "name": "Utility",
+    "description": "Didesain dengan rak untuk membawa barang, namun tidak untuk berboncengan dengan orang dewasa"
+  },
+  {
+    "name": "High-Performance",
+    "description": "Didesain khusus untuk mencapai kecepatan tinggi, memiliki akselerasi yang responsif, dan memacu adrenaline di jalan raya"
+  },
+  {
+    "name": "Tandem",
+    "description": "Didesain dengan 2 pedal dan 2 tempat duduk agar dapat dikendarai bersama-sama yang tersayang"
+  }
+]

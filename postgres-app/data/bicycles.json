@@ -1,0 +1,62 @@
+[
+  {
+    "name": "PATH 2",
+    "feature": "Accompanied with alloy rigid fork to dampen vibrations without sacrificing the weight",
+    "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2022/01/Path-2-P-768x576.png",
+    "description": "masih belum ada",
+    "price": 7000,
+    "StationId": 1,
+    "CategoryId": 1,
+    "status": true
+  },
+  {
+    "name": "SIERRA OOSTEN26",
+    "feature": "Compatible for racks, baskets, or bags for your everyday needs",
+    "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/11/MY21-OOSTEN26-OLVIE--768x512.png",
+    "description": "masih belum ada",
+    "price": 7500,
+    "StationId": 1,
+    "CategoryId": 2,
+    "status": true
+  },
+  {
+    "name": "STRATTOS S7D",
+    "feature": "Boosted pedaling efficiency",
+    "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Strattos-S7D-P-768x576.png",
+    "description": "masih belum ada",
+    "price": 7000,
+    "StationId": 2,
+    "CategoryId": 3,
+    "status": true
+  },
+  {
+    "name": "IMPRESSION AX DISC",
+    "feature": "Built around an alloy frame, designed with an upright position, low stand over height, and with tough 27.5” mountain bikes wheels",
+    "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Impression-AX-Disc-P-768x576.png",
+    "description": "masih belum ada",
+    "price": 5000,
+    "StationId": 2,
+    "CategoryId": 4,
+    "status": true
+  },
+  {
+    "name": "IMPRESSION AX DISC-2",
+    "feature": "Built around an alloy frame, designed with an upright position, low stand over height, and with tough 27.5” mountain bikes wheels",
+    "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Impression-AX-Disc-P-768x576.png",
+    "description": "masih belum ada",
+    "price": 7000,
+    "StationId": 3,
+    "CategoryId": 4,
+    "status": true
+  },
+  {
+    "name": "IMPRESSION AX DISC-3",
+    "feature": "Built around an alloy frame, designed with an upright position, low stand over height, and with tough 27.5” mountain bikes wheels",
+    "imageURL": "https://www.polygonbikes.com/wp-content/uploads/2021/12/Impression-AX-Disc-P-768x576.png",
+    "description": "masih belum ada",
+    "price": 5000,
+    "StationId": 3,
+    "CategoryId": 4,
+    "status": true
+  }
+]
